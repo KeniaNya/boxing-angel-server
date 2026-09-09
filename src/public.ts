@@ -30,18 +30,21 @@ footer{margin-top:40px;color:#7f6fa8;font-size:12px}
 
 <h2>Descargas</h2>
 ${apk ? row(apk, "Juego (APK)") : `<p class="warn">El APK aún no se ha publicado.</p>`}
-${obb ? row(obb, "Datos del juego (OBB)") : `<p class="warn">El archivo OBB aún no se ha publicado.</p>`}
+${obb ? row(obb, "Datos del juego (OBB) · solo para copia manual") : `<p class="warn">El archivo OBB aún no se ha publicado.</p>`}
 ${files.filter((f) => f !== apk && f !== obb).map((f) => row(f, f.name)).join("")}
 
 <h2>Instalación en Android</h2>
 <p class="muted">Requiere un Android que ejecute apps de 32 bits (armeabi-v7a): de Android 5 a 14 funciona, y también la mayoría de Android 15/16. Los teléfonos que solo admiten 64 bits (algunos Pixel recientes) no pueden instalarlo.</p>
 <ol>
-<li>Descarga e instala el <b>APK</b> (acepta "instalar apps de origen desconocido" si el teléfono lo pide). <b>No abras el juego todavía.</b></li>
-<li>Descarga el <b>OBB</b> y cópialo, con ese nombre exacto, a la carpeta del almacenamiento interno:<pre>Android/obb/th.in.monogame.boxingangel/</pre>Crea la carpeta si no existe. En Android 11 o superior el explorador del teléfono puede bloquear <code>Android/obb</code>: usa un explorador con permiso de "todos los archivos" (por ejemplo, el de Xiaomi/Samsung con ese permiso activado) o un PC con cable:<pre>adb shell mkdir -p /sdcard/Android/obb/th.in.monogame.boxingangel
-adb push ${escapeHtml(obb?.name ?? "main.2019042915.th.in.monogame.boxingangel.obb")} /sdcard/Android/obb/th.in.monogame.boxingangel/${escapeHtml(obb?.name ?? "main.2019042915.th.in.monogame.boxingangel.obb")}</pre></li>
-<li>Abre el juego. Con internet descarga la configuración del servidor, muestra las noticias y llega al login: pulsa <b>START</b> y luego <b>Login</b> (se crea una cuenta rápida en el teléfono; no la pierdas reinstalando).</li>
+<li>Descarga e instala el <b>APK</b> (acepta "instalar apps de origen desconocido" si el teléfono lo pide).</li>
+<li>Abre el juego con internet. La primera vez descarga solo los datos del juego (${obb ? fmtSize(obb.size) : "unos 153 MB"}) mostrando el progreso y se reinicia al terminar. Mejor con wifi.</li>
+<li>Al volver a abrirse descarga la configuración del servidor, muestra las noticias y llega al login: pulsa <b>START</b> y luego <b>Login</b> (se crea una cuenta rápida en el teléfono; no la pierdas reinstalando).</li>
 </ol>
-<p class="muted">Actualizaciones: basta instalar el APK nuevo encima del anterior (misma firma). El OBB no cambia. El servidor y sus noticias están en <a href="${escapeHtml(baseUrl)}/news/index.html" style="color:#ff9ad0">${escapeHtml(baseUrl)}/news/index.html</a>.</p>
+<details><summary class="muted">Copiar los datos a mano (si la descarga automática falla)</summary>
+<p class="muted">Descarga el <b>OBB</b> y cópialo, con ese nombre exacto, a la carpeta del almacenamiento interno <code>Android/obb/th.in.monogame.boxingangel/</code> (créala si no existe). En Android 11 o superior el explorador del teléfono puede bloquear <code>Android/obb</code>: usa un explorador con permiso de "todos los archivos" o un PC con cable:</p><pre>adb shell mkdir -p /sdcard/Android/obb/th.in.monogame.boxingangel
+adb push ${escapeHtml(obb?.name ?? "main.2019042915.th.in.monogame.boxingangel.obb")} /sdcard/Android/obb/th.in.monogame.boxingangel/${escapeHtml(obb?.name ?? "main.2019042915.th.in.monogame.boxingangel.obb")}</pre>
+</details>
+<p class="muted">Actualizaciones: basta instalar el APK nuevo encima del anterior (misma firma). Los datos del juego no cambian. Las noticias del servidor están en <a href="${escapeHtml(baseUrl)}/news/index.html" style="color:#ff9ad0">${escapeHtml(baseUrl)}/news/index.html</a>.</p>
 
 <h2>Aviso</h2>
 <p class="muted">El juego y sus recursos pertenecen a Mono Play Co., Ltd. Este proyecto no tiene relación con ellos; existe para que quienes jugaron puedan volver a hacerlo. Sin compras ni monetización.</p>
