@@ -101,6 +101,8 @@ export function loadPlayer(acc: string): Player | null {
   if (!existsSync(f)) return null;
   const p = JSON.parse(readFileSync(f, "utf8")) as Player;
   if (!p.ext) p.ext = {};
+  // Migracion: auids generados antes con hasta 10^10 desbordaban int32 en el cliente
+  for (const r of Object.values(p.roles)) if (Number(r.auid) > 2_147_483_647) r.auid = newAuid();
   cache.set(acc, p);
   return p;
 }
@@ -113,10 +115,15 @@ export function savePlayer(p: Player) {
   cache.set(p.acc, p);
 }
 
+/** auid: id de rol de 10 cifras que QUEPA en un int de 32 bits (los scripts tailandeses del cliente hacen int.Parse). */
+export function newAuid(): string {
+  return String(1_000_000_000 + Math.floor(Math.random() * 1_147_483_647));
+}
+
 export function newRole(rid: string): Role {
   const info = roleTable().get(rid);
   return {
-    auid: String(Math.floor(1_000_000_000 + Math.random() * 8_999_999_999)),
+    auid: newAuid(),
     rid,
     lv: 1,
     exp: 0,
