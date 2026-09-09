@@ -70,6 +70,8 @@ export async function handleSocket(path: string, req: Request, log: (...a: unkno
     }
     const replies: Frame[] = await dispatch(s, method, params, log);
     const out = [...replies, ...s.pending.splice(0)];
+    const first = replies[0]?.paramObject ?? {};
+    log(`${s.acc ?? s.id.slice(0, 8)} ${method} -> ${out.map((f) => f.methodName).join(",")} res=${String((first as { res?: unknown }).res ?? "?")}`);
     return json(out);
   }
 
