@@ -56,3 +56,22 @@ Texto tabulado; la primera línea es cabecera (el cliente la ignora). Los índic
 campo salen del cliente decompilado (`CSDatabase.InitChannelVersionData`,
 `CSDatabase.LoadNetworkInfoData`, `CSDownload.CheckSettingData`). Ver comentarios en
 `src/settings.ts`.
+
+## Panel de control (`/admin`)
+
+Página servida por el propio servidor: `http://boxingangel.lenasuite.org/admin` (usa `https://` si el
+túnel lo ofrece: el token viaja en cada petición). Requiere `ADMIN_TOKEN` en `server.env`
+(`lena env push`). Permite, sin redesplegar:
+
+- **Configuración**: servidor recomendado (online/offline), nombre, versión de datos, tercer panel del
+  gacha (Select/Cosplay), funciones del cliente (tutorial, NPC, historia, PvP), capítulos especiales
+  abiertos, modo mantenimiento. Se guarda en `LENA_APPDATA/data/config.json` y sustituye a las
+  variables de entorno equivalentes (`GAME_CONNECTION`, `NETWORK_NAME`, `DATA_VERSION`).
+- **Noticias**: título y cuerpo HTML del popup del login y de los webviews del lobby.
+- **Jugadores**: lista, edición (nombre, nivel, VIP, AP/TP, monedas, progreso, tutorial) y entrega
+  directa de objetos.
+- **Regalos**: correo con adjuntos a un jugador o a todos.
+- **Códigos de canje**: alta/baja con recompensas (una vez por jugador).
+- **Cuentas** y **log** reciente del servidor.
+
+API JSON en `/admin/api/*` con cabecera `Authorization: Bearer <ADMIN_TOKEN>` (ver `src/admin.ts`).
