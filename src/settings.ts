@@ -17,6 +17,8 @@ export type SettingsConfig = {
   clientVersions: string[];
   /** Nombre del servidor que se muestra en el selector */
   networkName: string;
+  /** Version de las tablas de datos (network_info campo 9); subirla fuerza re-descarga del zip de datos */
+  dataVersion: number;
   /** Flags de funciones (Android_connect_info) */
   flags: { showTutorial: 0 | 1; isNPC: 0 | 1; isStory: 0 | 1; isPVP: 0 | 1 };
 };
@@ -39,7 +41,9 @@ export function networkInfo(cfg: SettingsConfig): string {
   // 13 zipFileName, 14 zipFileURL, 15 ddmUrl
   return [
     row(["id", "name", "order", "connection", "ip", "fileIP", "resourceType", "unused", "urlNews", "version", "fileUrl", "iapAndroid", "iapIos", "zipFileName", "zipFileURL", "ddmUrl"]),
-    row([1, cfg.networkName, 1, cfg.connection, cfg.host, `${cfg.baseUrl}/boxingangel/files/`, 0, "", `${cfg.baseUrl}/news/index.html`, 1, "", "", "", "", "", ""]),
+    // resourceType 2 (Zip): las tablas se leen primero de la cache (nuestro zip) y si no, del OBB.
+    // zipFileName "setting": el "zip de datos" es este mismo zip de Setting.
+    row([1, cfg.networkName, 1, cfg.connection, cfg.host, `${cfg.baseUrl}/boxingangel/files/`, 2, "", `${cfg.baseUrl}/news/index.html`, cfg.dataVersion, "", "", "", "setting", "", ""]),
   ].join(CRLF) + CRLF;
 }
 
@@ -65,12 +69,18 @@ export function bundleDatabaseList(): string {
   return "@default_version\t1\n";
 }
 
-export function settingsZip(cfg: SettingsConfig): Uint8Array<ArrayBuffer> {
+/**
+ * Zip de Setting. Ademas de las 4 tablas de configuracion incluye las tablas de datos
+ * corregidas de `tables/` (sobrescriben a las del OBB: con resourceType=2 el cliente lee
+ * primero temporaryCachePath/<nombre>.txt, donde se descomprime este zip en cada arranque).
+ */
+export function settingsZip(cfg: SettingsConfig, overrideTables: { name: string; data: Uint8Array }[] = []): Uint8Array<ArrayBuffer> {
   const enc = new TextEncoder();
   return buildZip([
     { name: "channelVersion.txt", data: enc.encode(channelVersion(cfg)) },
     { name: "cover_localization.txt", data: enc.encode(coverLocalization()) },
     { name: "network_info_base.txt", data: enc.encode(networkInfo(cfg)) },
     { name: "Android_connect_info.txt", data: enc.encode(androidConnectInfo(cfg)) },
+    ...overrideTables,
   ]);
 }

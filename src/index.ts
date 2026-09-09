@@ -6,6 +6,8 @@
 
 import { settingsZip, bundleDatabaseList, type SettingsConfig } from "./settings.ts";
 import { createAccount, verifyAccount, loadAccounts, accountCount, HTTP_WRONG_DATA } from "./accounts.ts";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 
 const PORT = Number(process.env.PORT || 8090);
 const HOST = process.env.PUBLIC_HOST || "boxingangel.lenasuite.org";
@@ -20,11 +22,18 @@ const settingsCfg: SettingsConfig = {
   connection: CONNECTION,
   clientVersions: (process.env.CLIENT_VERSIONS || "1.0.18,1.0.17,1.0.16,1.0.15,1.0.14,1.0.13,1.0.12,1.0.11,1.0.10,1.0.9,1.0.8,1.0.7,1.0.6,1.0.5,1.0.4,1.0.3,1.0.2,1.0.1,1.0.0,1.0").split(","),
   networkName: process.env.NETWORK_NAME || "Community",
+  dataVersion: Number(process.env.DATA_VERSION || 1),
   flags: { showTutorial: 1, isNPC: 1, isStory: 1, isPVP: 0 },
 };
 
+// Tablas de datos corregidas (sobrescriben a las del OBB)
+const TABLES_DIR = join(import.meta.dir, "..", "tables");
+const overrideTables = existsSync(TABLES_DIR)
+  ? readdirSync(TABLES_DIR).filter((f) => f.endsWith(".txt")).map((f) => ({ name: f, data: new Uint8Array(readFileSync(join(TABLES_DIR, f))) }))
+  : [];
+
 const startedAt = new Date();
-const zipBytes = settingsZip(settingsCfg);
+const zipBytes = settingsZip(settingsCfg, overrideTables);
 const nAccounts = loadAccounts();
 
 const json = (body: unknown, status = 200) =>
@@ -122,4 +131,4 @@ const INDEX_HTML = `<!doctype html><meta charset="utf-8"><title>Boxing Angel com
 </ul>
 </body>`;
 
-log(`Boxing Angel server escuchando en :${server.port} · host publico ${HOST} · connection=${CONNECTION} · cuentas=${nAccounts}`);
+log(`Boxing Angel server escuchando en :${server.port} · host publico ${HOST} · connection=${CONNECTION} · cuentas=${nAccounts} · tablas override=${overrideTables.map((t) => t.name).join(",") || "ninguna"}`);
