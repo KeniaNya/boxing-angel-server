@@ -14,7 +14,7 @@ test("GetMission devuelve todas las misiones de la tabla con status/progress", a
   expect(list.length).toBe(missionInfos().size);
   expect(missionInfos().has("30110")).toBe(false); // linea basura del gamedata original
   expect(find(list, "3016002")).toEqual({ id: "3016002", status: MISSION_DOING, progress: 0 }); // diaria: 1 gacha
-  expect(find(list, "3006010")).toEqual({ id: "3006010", status: MISSION_FINISH, progress: 1 }); // nivel de gimnasio >= 1 (derivada del jugador)
+  expect(find(list, "3006010")).toEqual({ id: "3006010", status: MISSION_DOING, progress: 1 }); // nivel de gimnasio 70 (tabla corregida); progreso = nivel actual
   expect(find(list, "3006013")?.status).toBe(MISSION_DOING); // nivel 2 todavia no
 });
 
