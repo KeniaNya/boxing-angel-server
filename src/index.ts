@@ -16,7 +16,7 @@ const HOST = process.env.PUBLIC_HOST || "boxingangel.lenasuite.org";
 const BASE_URL = process.env.PUBLIC_BASE_URL || `http://${HOST}`;
 const CONNECTION = (process.env.GAME_CONNECTION === "1" ? 1 : 0) as 0 | 1;
 const GAME_HOST = process.env.GAME_SERVER_HOST || HOST;
-const GAME_PORT = Number(process.env.GAME_SERVER_PORT || 9003);
+const GAME_PORT = Number(process.env.GAME_SERVER_PORT || 80); // transporte HTTP: BAHttpSocket omite el puerto si es 80
 
 const settingsCfg: SettingsConfig = {
   host: HOST,
