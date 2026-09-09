@@ -13,6 +13,7 @@ import { serveFile } from "./files.ts";
 import { log } from "./logbuf.ts";
 import { createAccount, verifyAccount, loadAccounts, accountCount, HTTP_WRONG_DATA } from "./accounts.ts";
 import { handleSocket, sessionCount } from "./socket.ts";
+import { livePeerOpen, liveMessage, livePeerClose, liveStatus, type Peer } from "./live.ts";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -92,9 +93,15 @@ await loadHandlerModules(log);
 const server = Bun.serve({
   port: PORT,
   hostname: "0.0.0.0",
-  fetch(req) {
+  fetch(req, server) {
     const url = new URL(req.url);
     const p = url.pathname;
+
+    // PvP en vivo: WebSocket de emparejamiento y reenvio (cliente parcheado, BALive)
+    if (p === "/live") {
+      if (server.upgrade(req, { data: { peer: null as Peer | null } })) return undefined;
+      return text("websocket expected", 426);
+    }
 
     // Panel de control (token en ADMIN_TOKEN)
     if (p === "/admin" || p.startsWith("/admin/")) return handleAdmin(p, req, { startedAt });
@@ -135,7 +142,7 @@ const server = Bun.serve({
     if (dl) return serveFile(decodeURIComponent(dl[1]), req);
 
     if (p === "/api/health") {
-      return json({ ok: true, startedAt, uptimeSeconds: Math.round((Date.now() - startedAt.getTime()) / 1000), accounts: accountCount(), sessions: sessionCount(), connection: config().connection, host: HOST });
+      return json({ ok: true, startedAt, uptimeSeconds: Math.round((Date.now() - startedAt.getTime()) / 1000), accounts: accountCount(), sessions: sessionCount(), live: liveStatus(), connection: config().connection, host: HOST });
     }
 
     if (p === "/" || p === "/index.html") {
@@ -145,6 +152,18 @@ const server = Bun.serve({
 
     log("404", req.method, p);
     return text("not found", 404);
+  },
+  websocket: {
+    idleTimeout: 120,
+    open(ws) {
+      ws.data.peer = livePeerOpen({ send: (t) => ws.send(t), close: () => ws.close() }, log);
+    },
+    message(ws, msg) {
+      if (ws.data.peer) liveMessage(ws.data.peer, typeof msg === "string" ? msg : new TextDecoder().decode(msg), log);
+    },
+    close(ws) {
+      if (ws.data.peer) livePeerClose(ws.data.peer, log);
+    },
   },
 });
 

@@ -34,6 +34,13 @@ export function sessionCount(): number {
   return sessions.size;
 }
 
+/** Sesion de juego por id (X-BA-Session); la usa el PvP en vivo para identificar al jugador del WebSocket. */
+export function getSession(id: string): GameSession | undefined {
+  const s = sessions.get(id);
+  if (s) s.lastSeen = Date.now();
+  return s;
+}
+
 export async function handleSocket(path: string, req: Request, log: (...a: unknown[]) => void): Promise<Response> {
   if (req.method !== "POST") return json({ error: "POST only" }, 405);
   const action = path.slice("/socket/".length);
