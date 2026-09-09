@@ -1,0 +1,5 @@
+{
+  "name": "boxing-angel",
+  "subdomain": "boxingangel",
+  "start": "bun run src/index.ts"
+}
