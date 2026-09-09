@@ -2,13 +2,11 @@
 // Permite editar la configuracion en caliente, las noticias, los codigos de canje, ver jugadores y cuentas,
 // ajustar monedas/objetos, mandar regalos por correo y leer el log reciente.
 
-import { readFileSync, existsSync } from "node:fs";
-import { join } from "node:path";
 import { config, updateConfig, normalizeRewards, type ServerConfig } from "./config.ts";
+import { catalog, dictionary, nameOf, openChapterOptions, weekSchedule, todayOpenChapters, KINDS } from "./catalog.ts";
 import { listAccounts, accountCount } from "./accounts.ts";
 import { loadPlayer, savePlayer, listPlayers, type Player } from "./players.ts";
-import { grant, isEquipId } from "./economy.ts";
-import { table } from "./gamedata.ts";
+import { grant } from "./economy.ts";
 import { sendMail } from "./handlers/missions.ts";
 import { recentLog, log } from "./logbuf.ts";
 import { sessionCount } from "./socket.ts";
@@ -67,10 +65,22 @@ export async function handleAdmin(path: string, req: Request, ctx: Ctx): Promise
       return json(listAccounts().map((a) => ({ acc: a.acc, type: a.type, createdAt: a.createdAt, lastLoginAt: a.lastLoginAt ?? null })));
     }
     if (route === "items" && req.method === "GET") {
+      // buscador de recompensas (monedas + objetos + equipo + fragmentos) por nombre o id
       const q = (new URL(req.url).searchParams.get("q") ?? "").toLowerCase().trim();
-      const all = itemCatalog();
+      const all = [...COINS, ...catalog("item"), ...catalog("equip"), ...catalog("fragment")];
       const hits = q ? all.filter((i) => i.id.includes(q) || i.name.toLowerCase().includes(q)) : all;
-      return json(hits.slice(0, 60));
+      return json(hits.slice(0, 60).map((i) => ({ id: i.id, name: i.name, kind: i.kind })));
+    }
+    const cm = /^catalog\/([a-z]+)$/.exec(route);
+    if (cm && req.method === "GET") {
+      if (!(KINDS as readonly string[]).includes(cm[1])) return fail("tipo de catalogo desconocido", 404);
+      const q = (new URL(req.url).searchParams.get("q") ?? "").toLowerCase().trim();
+      const all = catalog(cm[1]);
+      return json(q ? all.filter((e) => [e.id, e.name, e.desc, e.extra].some((t) => t.toLowerCase().includes(q))) : all);
+    }
+    if (route === "dictionary" && req.method === "GET") return json(Object.fromEntries(dictionary()));
+    if (route === "openchapters" && req.method === "GET") {
+      return json({ options: openChapterOptions(), schedule: weekSchedule(), today: todayOpenChapters(), configured: config().openChapters });
     }
     if (route === "players" && req.method === "GET") {
       const q = (new URL(req.url).searchParams.get("q") ?? "").toLowerCase().trim();
@@ -80,7 +90,7 @@ export async function handleAdmin(path: string, req: Request, ctx: Ctx): Promise
         .map((p) => summary(p, logins.get(p.acc) ?? null));
       return json(out);
     }
-    const pm = /^players\/([^/]+)(?:\/(items|mail))?$/.exec(route);
+    const pm = /^players\/([^/]+)(?:\/(items|mail|inventory))?$/.exec(route);
     if (pm) {
       const acc = decodeURIComponent(pm[1]);
       const p = loadPlayer(acc);
@@ -99,6 +109,16 @@ export async function handleAdmin(path: string, req: Request, ctx: Ctx): Promise
         savePlayer(p);
         log("admin: objetos entregados a", acc, JSON.stringify(rewards));
         return json({ ok: true, coin: p.coin, items: p.items, equips: p.equips.length });
+      }
+      if (pm[2] === "inventory" && req.method === "GET") {
+        const role = p.roles[p.last_use];
+        return json({
+          coins: [["gcoin", p.coin[0]], ["vcoin", p.coin[1]], ["pcoin", p.coin[2]], ["ecoin", p.coin[3]]].map(([id, n]) => ({ id, name: nameOf(String(id)), amount: n })),
+          items: Object.entries(p.items).map(([id, amount]) => ({ id, name: nameOf(id), amount })),
+          equips: p.equips.map((e) => ({ id: e.id, name: nameOf(e.id), lv: e.lv, quality: e.quality, equipped: role ? role.equip_in.includes(e.id) : false })),
+          roles: Object.values(p.roles).map((r) => ({ rid: r.rid, name: nameOf(r.rid), lv: r.lv, active: r.rid === p.last_use })),
+          progress: { story: `${nameOf(p.ch_progress)} (${p.ch_progress})`, elite: p.ech_progress ? `${nameOf(p.ech_progress)} (${p.ech_progress})` : "-" },
+        });
       }
       if (pm[2] === "mail" && req.method === "POST") {
         const b = await body();
@@ -167,36 +187,9 @@ function giftMail(targets: Player[], b: Record<string, unknown>): number {
   log(`admin: regalo "${title}" enviado a ${targets.length} jugador(es)`, JSON.stringify(annex));
   return targets.length;
 }
-
-// ---- catalogo de objetos para el buscador de regalos: id + nombre en ingles (srt_eng) + tipo
-type CatalogItem = { id: string; name: string; kind: "coin" | "item" | "equip" | "fragment" };
-let catalog: CatalogItem[] | null = null;
-function itemCatalog(): CatalogItem[] {
-  if (catalog) return catalog;
-  const names = new Map<string, string>();
-  const srt = join(import.meta.dir, "..", "tables", "srt_eng.txt");
-  if (existsSync(srt)) {
-    for (const l of readFileSync(srt, "utf8").split(/\r?\n/).slice(1)) {
-      const [k, v] = l.split("\t");
-      if (k && v) names.set(k.trim(), v.trim());
-    }
-  }
-  const nameOf = (key: string, fallback: string) => names.get(key) ?? fallback;
-  const row = (kind: CatalogItem["kind"]) => (f: string[]): CatalogItem => ({ id: f[0], name: nameOf(f[1], f[1]), kind });
-  const coins: CatalogItem[] = [
-    { id: "gcoin", name: "Gold", kind: "coin" },
-    { id: "vcoin", name: "Diamonds", kind: "coin" },
-    { id: "pcoin", name: "PvP coins", kind: "coin" },
-    { id: "ecoin", name: "Elite coins", kind: "coin" },
-  ];
-  const list: CatalogItem[] = [
-    ...coins,
-    ...table("item_info.txt").map(row("item")),
-    ...table("equip_info.txt").map(row("equip")),
-    ...table("fragment_info.txt").map(row("fragment")),
-  ].filter((i) => /^[A-Za-z0-9_]+$/.test(i.id));
-  // sanity: los ids de equipo deben coincidir con economy.isEquipId
-  const fixed: CatalogItem[] = list.map((i): CatalogItem => (i.kind === "item" && isEquipId(i.id) ? { id: i.id, name: i.name, kind: "equip" } : i));
-  catalog = fixed;
-  return fixed;
-}
+const COINS = [
+  { id: "gcoin", name: "Gold", kind: "coin" },
+  { id: "vcoin", name: "Diamonds", kind: "coin" },
+  { id: "pcoin", name: "PvP coins", kind: "coin" },
+  { id: "ecoin", name: "Elite coins", kind: "coin" },
+];

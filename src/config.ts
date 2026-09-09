@@ -22,7 +22,8 @@ export type ServerConfig = {
   news: { title: string; body: string };
   /** Codigos de canje: CODIGO -> recompensas */
   redeemCodes: Record<string, RewardItem[]>;
-  /** Capitulos especiales abiertos hoy (GetTodayOpenChapter) */
+  /** Capitulos especiales abiertos hoy (GetTodayOpenChapter): codigos "TTCC" (15xx tour, 16xx liga especial).
+   *  Lista vacia = automatico segun el horario semanal de week_open_chapter_info. */
   openChapters: string[];
   /** Mensaje de mantenimiento: si no esta vacio, el login HTTP responde error y el cliente lo muestra */
   maintenance: string;
@@ -46,7 +47,7 @@ export const DEFAULTS: ServerConfig = {
     BOXINGANGEL: [{ id: "0201001", amount: 5 }, { id: "0201002", amount: 3 }, { id: "vcoin", amount: 100 }],
     REVIVAL: [{ id: "0202004", amount: 5 }, { id: "gcoin", amount: 10000 }],
   },
-  openChapters: ["1501", "1502", "1601", "1602", "1603", "1604"],
+  openChapters: [],
   maintenance: "",
 };
 

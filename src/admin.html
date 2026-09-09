@@ -77,6 +77,7 @@
   <button data-tab="players">Jugadores</button>
   <button data-tab="gift">Regalos</button>
   <button data-tab="codes">Códigos</button>
+  <button data-tab="catalog">Catálogo</button>
   <button data-tab="accounts">Cuentas</button>
   <button data-tab="log">Log</button>
 </nav>
@@ -111,7 +112,10 @@
     <label><input type="checkbox" id="cfg-isPVP"> PvP</label>
   </div>
   <h3>Capítulos especiales abiertos hoy</h3>
-  <input type="text" id="cfg-openChapters" placeholder="1501,1502,1601,1602,1603,1604">
+  <p class="msg">Son los eventos de <b>Tour</b> (combates fuera del gimnasio) y <b>Liga especial</b> (Jab, Hook, Uppercut, Dodge) que aparecen en el lobby. El juego original los rotaba por día de la semana según su tabla; puedes dejar la rotación automática o fijar cuáles están abiertos.</p>
+  <label><input type="checkbox" id="cfg-openAuto"> Rotación automática según el horario semanal (hoy: <span id="cfg-openToday"></span>)</label>
+  <div id="cfg-openList" class="row" style="margin-top:6px"></div>
+  <details><summary>Ver horario semanal de la tabla original</summary><table id="cfg-schedule"><tbody></tbody></table></details>
   <h3>Mantenimiento</h3>
   <p class="msg">Si escribes un mensaje, el login HTTP se rechaza y el cliente lo muestra. Déjalo vacío para abrir el servidor.</p>
   <input type="text" id="cfg-maintenance" placeholder="(vacío = servidor abierto)">
@@ -149,6 +153,8 @@
     <h3>Entregar objetos directamente al inventario</h3>
     <div id="pd-items-picker"></div>
     <div class="actions"><button class="btn secondary" onclick="grantItems()">Entregar</button><span class="msg" id="pd-items-msg"></span></div>
+    <h3>Inventario y progreso</h3>
+    <div id="pd-inventory" class="msg"></div>
     <details><summary>JSON completo del jugador</summary><pre id="pd-json"></pre></details>
   </div>
 </section>
@@ -176,6 +182,25 @@
   <div class="row"><div><label>Código (mayúsculas, 3-32)</label><input type="text" id="code-name" maxlength="32"></div></div>
   <div id="code-items-picker"></div>
   <div class="actions"><button class="btn" onclick="addCode()">Añadir / reemplazar</button><span class="msg" id="codes-msg"></span></div>
+</section>
+
+<section id="tab-catalog">
+  <h2>Catálogo del juego</h2>
+  <p class="msg">Todo lo que existe en las tablas del juego con su nombre en inglés, para saber qué es cada id. Los ids de objetos, equipo y fragmentos son los que se usan en regalos y códigos.</p>
+  <div class="actions">
+    <select id="cat-kind" style="max-width:240px">
+      <option value="item">Objetos (consumibles, materiales)</option>
+      <option value="equip">Equipo (ropa, guantes...)</option>
+      <option value="fragment">Fragmentos de equipo</option>
+      <option value="chapter">Capítulos / etapas</option>
+      <option value="mission">Misiones</option>
+      <option value="role">Personajes</option>
+    </select>
+    <input type="text" id="cat-q" placeholder="Buscar por nombre, id o texto" style="max-width:320px">
+    <button class="btn secondary" onclick="loadCatalog()">Buscar</button>
+    <span class="msg" id="cat-msg"></span>
+  </div>
+  <table id="cat-table"><thead><tr><th>Id</th><th>Nombre</th><th>Descripción</th><th>Detalles</th></tr></thead><tbody></tbody></table>
 </section>
 
 <section id="tab-accounts">
@@ -218,9 +243,12 @@ $('login-btn').onclick = function () {
     .catch(function (e) { msg('login-msg', e.message, 'err'); });
 };
 $('logout').onclick = function () { localStorage.removeItem('ba_admin_token'); location.reload(); };
+var dict = {};
+function nameOf(id) { return dict[id] || id; }
 function showApp() {
   $('login').classList.add('hidden'); $('app').classList.remove('hidden'); $('logout').style.display = '';
-  loadStatus(); loadConfig(); loadPlayers(); loadCodes(); loadAccounts(); loadLog();
+  api('dictionary').then(function (d) { dict = d; loadCodes(); });
+  loadStatus(); loadConfig(); loadOpenChapters(); loadPlayers(); loadAccounts(); loadLog(); loadCatalog();
   ['gift-items-picker', 'code-items-picker', 'pd-items-picker'].forEach(makePicker);
 }
 if (token) api('status').then(showApp).catch(function () { $('token').value = token; });
@@ -255,7 +283,7 @@ function loadConfig() {
     $('cfg-dataVersion').value = c.dataVersion;
     $('cfg-gachaType').value = String(c.gachaType);
     ['showTutorial', 'isNPC', 'isStory', 'isPVP'].forEach(function (k) { $('cfg-' + k).checked = !!c.flags[k]; });
-    $('cfg-openChapters').value = c.openChapters.join(',');
+    openConfigured = c.openChapters; renderOpenChapters();
     $('cfg-maintenance').value = c.maintenance || '';
     $('news-title').value = c.news.title; $('news-body').value = c.news.body;
   });
@@ -265,12 +293,44 @@ function saveConfig() {
     connection: Number($('cfg-connection').value), networkName: $('cfg-networkName').value,
     dataVersion: Number($('cfg-dataVersion').value), gachaType: Number($('cfg-gachaType').value),
     flags: { showTutorial: $('cfg-showTutorial').checked ? 1 : 0, isNPC: $('cfg-isNPC').checked ? 1 : 0, isStory: $('cfg-isStory').checked ? 1 : 0, isPVP: $('cfg-isPVP').checked ? 1 : 0 },
-    openChapters: $('cfg-openChapters').value.split(',').map(function (s) { return s.trim(); }).filter(Boolean),
+    openChapters: $('cfg-openAuto').checked ? [] : Array.prototype.map.call(document.querySelectorAll('#cfg-openList input:checked'), function (x) { return x.value; }),
     maintenance: $('cfg-maintenance').value,
   };
   api('config', { method: 'PUT', body: patch }).then(function () { msg('cfg-msg', 'Guardado', 'ok'); loadStatus(); })
     .catch(function (e) { msg('cfg-msg', e.message, 'err'); });
 }
+// ---- capítulos especiales abiertos
+var openOptions = [], openSchedule = {}, openToday = [], openConfigured = [];
+var DAYS = { 1: 'Lunes', 2: 'Martes', 3: 'Miércoles', 4: 'Jueves', 5: 'Viernes', 6: 'Sábado', 7: 'Domingo' };
+function loadOpenChapters() {
+  api('openchapters').then(function (r) { openOptions = r.options; openSchedule = r.schedule; openToday = r.today; openConfigured = r.configured; renderOpenChapters(); });
+}
+function chapterLabel(code) { var o = openOptions.filter(function (x) { return x.code === code; })[0]; return o ? o.name + ' (' + o.type + ', ' + code + ')' : code; }
+function renderOpenChapters() {
+  var auto = openConfigured.length === 0;
+  $('cfg-openAuto').checked = auto;
+  $('cfg-openToday').textContent = openToday.map(chapterLabel).join(' · ') || '-';
+  $('cfg-openList').innerHTML = openOptions.map(function (o) {
+    var on = auto ? openToday.indexOf(o.code) >= 0 : openConfigured.indexOf(o.code) >= 0;
+    return '<label><input type="checkbox" value="' + o.code + '"' + (on ? ' checked' : '') + (auto ? ' disabled' : '') + '> ' + esc(o.name) + ' <span style="color:#a898c8">' + esc(o.type) + ' · ' + o.code + '</span></label>';
+  }).join('');
+  $('cfg-schedule').querySelector('tbody').innerHTML = Object.keys(openSchedule).map(function (d) { return '<tr><td>' + DAYS[d] + '</td><td>' + openSchedule[d].map(chapterLabel).join(', ') + '</td></tr>'; }).join('');
+  $('cfg-openAuto').onchange = function () { openConfigured = $('cfg-openAuto').checked ? [] : openToday.slice(); renderOpenChapters(); };
+}
+
+// ---- catálogo
+function loadCatalog() {
+  var kind = $('cat-kind').value, q = $('cat-q').value.trim();
+  api('catalog/' + kind + '?q=' + encodeURIComponent(q)).then(function (list) {
+    msg('cat-msg', list.length + ' resultado(s)' + (list.length > 400 ? ' (se muestran 400)' : ''));
+    $('cat-table').querySelector('tbody').innerHTML = list.slice(0, 400).map(function (e) {
+      return '<tr><td><code>' + esc(e.id) + '</code></td><td>' + esc(e.name) + '</td><td>' + esc(e.desc) + '</td><td class="msg">' + esc(e.extra) + '</td></tr>';
+    }).join('') || '<tr><td colspan="4" class="msg">Sin resultados</td></tr>';
+  });
+}
+$('cat-kind').onchange = loadCatalog;
+$('cat-q').onkeydown = function (e) { if (e.key === 'Enter') loadCatalog(); };
+
 function saveNews() {
   api('config', { method: 'PUT', body: { news: { title: $('news-title').value, body: $('news-body').value } } })
     .then(function () { msg('news-msg', 'Publicado', 'ok'); }).catch(function (e) { msg('news-msg', e.message, 'err'); });
@@ -328,6 +388,14 @@ function openPlayer(acc) {
     $('pd-progress').value = p.ch_progress; $('pd-teaching').value = p.teaching_flag;
     $('pd-json').textContent = JSON.stringify(p, null, 2);
     $('player-detail').scrollIntoView({ behavior: 'smooth' });
+    api('players/' + encodeURIComponent(acc) + '/inventory').then(function (inv) {
+      var h = '<b>Progreso:</b> historia ' + esc(inv.progress.story) + ' · élite ' + esc(inv.progress.elite) + '<br>';
+      h += '<b>Personajes:</b> ' + inv.roles.map(function (r) { return esc(r.name) + ' lv' + r.lv + (r.active ? ' (activo)' : ''); }).join(', ') + '<br>';
+      h += '<b>Monedas:</b> ' + inv.coins.map(function (c) { return esc(c.name) + ' ' + c.amount; }).join(' · ') + '<br>';
+      h += '<b>Objetos (' + inv.items.length + '):</b> ' + inv.items.map(function (i) { return esc(i.name) + ' ×' + i.amount; }).join(', ') + '<br>';
+      h += '<b>Equipo (' + inv.equips.length + '):</b> ' + inv.equips.map(function (e) { return esc(e.name) + ' lv' + e.lv + (e.equipped ? ' (puesto)' : ''); }).join(', ');
+      $('pd-inventory').innerHTML = h;
+    });
   });
 }
 function savePlayer() {
@@ -364,7 +432,7 @@ function loadCodes() {
 function renderCodes() {
   var tb = $('codes-table').querySelector('tbody');
   tb.innerHTML = Object.keys(codes).map(function (k) {
-    return '<tr><td><code>' + esc(k) + '</code></td><td>' + codes[k].map(function (r) { return esc(r.id) + ' × ' + r.amount; }).join(', ') + '</td><td><button class="btn danger" data-k="' + esc(k) + '">Borrar</button></td></tr>';
+    return '<tr><td><code>' + esc(k) + '</code></td><td>' + codes[k].map(function (r) { return esc(nameOf(r.id)) + ' × ' + r.amount + ' <span style="color:#a898c8">' + esc(r.id) + '</span>'; }).join(', ') + '</td><td><button class="btn danger" data-k="' + esc(k) + '">Borrar</button></td></tr>';
   }).join('') || '<tr><td colspan="3" class="msg">Sin códigos</td></tr>';
   tb.querySelectorAll('button').forEach(function (b) { b.onclick = function () { delete codes[b.dataset.k]; saveCodes(); }; });
 }

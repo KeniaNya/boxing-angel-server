@@ -72,6 +72,10 @@ túnel lo ofrece: el token viaja en cada petición). Requiere `ADMIN_TOKEN` en `
   directa de objetos.
 - **Regalos**: correo con adjuntos a un jugador o a todos.
 - **Códigos de canje**: alta/baja con recompensas (una vez por jugador).
+- **Catálogo**: objetos, equipo, fragmentos, capítulos, misiones y personajes con nombre en inglés y
+  explicación de cada id (`src/catalog.ts`). Los ids se usan tal cual en regalos y códigos.
+- **Capítulos especiales abiertos**: Tour (15xx) y Liga especial (16xx). Por defecto rotan según
+  `week_open_chapter_info` (lunes = 1); desde el panel se puede fijar una lista manual.
 - **Cuentas** y **log** reciente del servidor.
 
 API JSON en `/admin/api/*` con cabecera `Authorization: Bearer <ADMIN_TOKEN>` (ver `src/admin.ts`).
