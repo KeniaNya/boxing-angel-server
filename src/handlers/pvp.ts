@@ -45,7 +45,7 @@ const ASN_TYPE = "80"; // CSChapterType.Assassin
 const PVP_CHAPTER_TYPE = "19"; // CSChapterType.PVP (filas con rol NPC + modo de IA)
 
 // ---------------------------------------------------------------- estado del dominio
-type Opp = { rank: number; npc: boolean; acc: string; auid: string; name: string; rid: string; lv: number };
+type Opp = { rank: number; npc: boolean; acc: string; auid: string; name: string; rid: string; lv: number; live?: boolean };
 type BattleRecord = { ctime: number; opponent_auid: string; opponent_name: string; opponent_rid: string; opponent_lv: number; variation: number };
 type AsnState = { week: string; chapter: string; progress: number; finished: boolean; stars: number; damage: number; maxHit: number; wins: number; battles: number; playing: string };
 type PvpExt = {
@@ -55,6 +55,9 @@ type PvpExt = {
   fighting: Opp | null; // rival de la batalla en curso
   records: BattleRecord[]; // historial (mas reciente primero)
   assassin: AsnState;
+  live?: Opp | null; // rival del PvP EN VIVO emparejado (src/live.ts); StartPvPBattle lo usa en vez de offered
+  liveWins?: number;
+  liveLosses?: number;
 };
 
 function newAsn(): AsnState {
@@ -275,6 +278,22 @@ function opponentRow(o: Opp): unknown[] {
   return [o.rank, 1, hash(o.rank) % 50 + 50, hash(o.rank + 7) % 50, o.auid, o.name, o.rid, o.lv, row.attr, ...eq, pvpSkill(null, row.skill1), pvpSkill(null, row.skill2), ai, "", "", "", "", "", row.passive];
 }
 
+// ---------------------------------------------------------------- PvP EN VIVO (src/live.ts)
+/** Rival "en vivo": el rol ACTIVO del jugador (con el que pelea), no el registrado en la escalera. */
+function liveOpp(q: Player): Opp {
+  const role = currentRole(q);
+  return { rank: q.pvp_rank, npc: false, acc: q.acc, auid: role.auid, name: q.name, rid: role.rid, lv: role.lv, live: true };
+}
+/** Fila de rival (formato GetPvPOpponentS2C) con el rol activo del jugador, para el mensaje "match" del PvP en vivo. */
+export function liveOpponentRow(q: Player): unknown[] {
+  savePlayer(q); // opponentRow relee al jugador del disco
+  return opponentRow(liveOpp(q));
+}
+/** Deja preparado el combate en vivo de p contra opp: el siguiente StartPvPBattle no consume intentos ni usa la lista. */
+export function beginLiveFight(p: Player, opp: Player): void {
+  st(p).live = liveOpp(opp);
+}
+
 /** Hasta 3 rivales con mejor puesto: jugadores reales mas cercanos primero, NPC de relleno en puestos libres. */
 function pickOpponents(p: Player): Opp[] {
   const R = p.pvp_rank;
@@ -415,6 +434,11 @@ export const handlers: Record<string, PlayerHandler> = {
   StartPvPBattleC2S({ p, params }) {
     refreshPvpDay(p);
     const e = st(p);
+    if (e.live) {
+      // PvP en vivo: rival emparejado por src/live.ts; no consume intentos ni enfriamiento
+      e.fighting = e.live;
+      return [s2c("StartPvPBattleS2C", { res: 0, pvp_times: p.pvp_times, pvp_flag: p.pvp_flag })];
+    }
     const idx = num(params.index, -1);
     const o = e.offered?.[idx];
     if (!p.pvp_role || !o) return [s2c("StartPvPBattleS2C", { res: R.WRONG_DATA })];
@@ -434,6 +458,15 @@ export const handlers: Record<string, PlayerHandler> = {
     if (!o) return [s2c("ReportPvPBattleResultsS2C", { res: R.WRONG_DATA })];
     e.fighting = null;
     const win = num(params.battle_res) === 1;
+    if (o.live) {
+      // combate en vivo: no toca la escalera; cuenta victorias/derrotas aparte y queda en el historial
+      e.live = null;
+      if (win) e.liveWins = (e.liveWins ?? 0) + 1;
+      else e.liveLosses = (e.liveLosses ?? 0) + 1;
+      const rec: BattleRecord = { ctime: Date.now(), opponent_auid: o.auid, opponent_name: o.name, opponent_rid: o.rid, opponent_lv: o.lv, variation: 0 };
+      addRecord(p, rec);
+      return [s2c("ReportPvPBattleResultsS2C", { res: 0, victory: p.pvp_victory, fail: p.pvp_fail, rank: p.pvp_rank, record: rec })];
+    }
     const oldRank = p.pvp_rank;
     let newRank = oldRank;
     const now = Date.now();
