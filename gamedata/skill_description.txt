@@ -1,0 +1,42 @@
+﻿id	說明文字	icon
+1	扣除血量 X 值	
+2	扣除血量最大值的 X 百分比	
+3	扣除自己血量損失值的 X 百分比 給予目標	
+4	暈眩持續 X 秒	Icon_Buff_dizzy
+5	減少扣除血量與耐久度50%持續 X 秒	Icon_Buff_shield
+6	無法使用上鉤拳持續 X 秒	Icon_Buff_forbid_uppercut
+7	在 X 秒內，刺拳可中斷任何攻擊，除技能外	Icon_Buff_breaking jab
+8	爆擊率下降 X 百分比	Icon_Buff_attack dowm
+9	倒地次數增加 X 次	
+10	勝利獲得金額增加 X 百分比	
+11	倒地時倒數不會扣耐久值	Icon_Buff_shield
+12	技能等級增加 X ,最大值為99	
+13	增加(刺拳，勾拳，上勾拳，體力，精神)各 X 值	
+14	被擊倒後 X 秒內點擊數會自動補滿	Icon_Buff_raise
+15	永不暈眩	Icon_Buff_undizzy
+16	怒氣在第一回合開場時為全滿狀態	
+17	成功防禦不減扣耐久	Icon_Buff_iron
+18	擊中有 X 機率觸發雷擊狀態 (對手血量-5%)	Icon_Buff_thunder
+19	每一次成功擊中(對方未防禦)目標暈眩值多 X 值	Icon_Buff_faint
+20	增加血量與耐久 X 值	
+21	扣除耐久 X 值	
+22	無法使用鉤拳持續 X 秒	Icon_Buff_forbid_hooking
+23	無法使用刺拳持續 X 秒	Icon_Buff_forbid_jabbing2
+24	增加(刺拳)各 X 值	
+25	增加(鉤拳)各 X 值	
+26	增加(上鉤拳)各 X 值	
+27	增加(精神)各 X 值	
+28	增加(體力)各 X 值	
+29	增加(刺拳防禦)各 X 值	
+30	增加(鉤拳防禦)各 X 值	
+31	增加(上鉤防禦)各 X 值	
+32	增加(刺拳拳速)各 X 值	Icon_Buff_JabS
+33	增加(鉤拳拳速)各 X 值	Icon_Buff_HookS
+34	增加(上鉤拳速)各 X 值	Icon_Buff_upperS
+35	增加(爆擊等級)各 X 值	Icon_Buff_rate
+36	增加(10秒回血)各 X 值	Icon_Buff_heal
+37	增加(爆擊傷害)各 X 值	Icon_Buff_dmg
+38	增加(血量加成)各 X 值	Icon_Buff_hp
+39	施放技能 (數值) 百分比 無效	Icon_Buff_immskill
+40	減少一般技能 (數值) 百分比 傷害	Icon_Buff_skilldef
+41	減少犯規技能 (數值) 百分比 傷害	Icon_Buff_killdef

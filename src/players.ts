@@ -84,6 +84,8 @@ export type Player = {
   skills: Skill[];
   scores: Score[];
   createdAt: string;
+  /** Estado por dominio (misiones, correo, amigos, PvP...). Cada modulo de src/handlers/ guarda lo suyo bajo su clave. */
+  ext: Record<string, unknown>;
 };
 
 const cache = new Map<string, Player>();
@@ -98,6 +100,7 @@ export function loadPlayer(acc: string): Player | null {
   const f = file(acc);
   if (!existsSync(f)) return null;
   const p = JSON.parse(readFileSync(f, "utf8")) as Player;
+  if (!p.ext) p.ext = {};
   cache.set(acc, p);
   return p;
 }
@@ -164,6 +167,7 @@ export function createPlayer(acc: string, name: string, rid: string): Player {
     skills: [],
     scores: chapterIds().map((ch_id) => ({ ch_id, score: [0, 0, 0], times: 0, refresh_times: 0 })),
     createdAt: new Date(now).toISOString(),
+    ext: {},
   };
   savePlayer(p);
   return p;
@@ -171,4 +175,11 @@ export function createPlayer(acc: string, name: string, rid: string): Player {
 
 export function newSessionKey(): string {
   return randomUUID().replace(/-/g, "");
+}
+
+/** Estado de un dominio dentro de player.ext (se crea con `init` la primera vez). */
+export function ext<T>(p: Player, key: string, init: () => T): T {
+  if (!p.ext) p.ext = {};
+  if (p.ext[key] === undefined) p.ext[key] = init();
+  return p.ext[key] as T;
 }

@@ -1,0 +1,30 @@
+﻿類型	說明	獎勵物品字	BAR	個別領取按鈕	開啟介面名稱	開啟介面方式	圖	Type	解鎖方式	子類型
+1	儲值區鑽石購買加送鑽石				InterfaceIAP	0	bounsshow004	IAP_Bouns		
+2	一般關卡通關獎金加倍				InterfaceMapGeneral	1	Icon_Mission01	NormalCoinDouble		
+3	一般關卡通關零件碎片取得加倍				InterfaceMapGeneral	1	bounsshow001	NormalItemDouble		
+4	精英關卡通關裝備碎片加倍				InterfaceMapGeneral	1	bounsshow010	EliteItemDouble	KnowElite	
+5	會外賽掉落加倍				InterfaceOutSideGame	1	bounsshow009	OutsideDouble	OutSide	
+6	特殊聯賽掉落加倍				InterfaceSpecial	1	bounsshow007	SpecialDouble	Special	
+7	會外賽同時開啟				InterfaceOutSideGame	1	bounsshow009	OutsideOpenAll	OutSide	
+8	特殊聯賽同時開啟				InterfaceSpecial	1	bounsshow007	SpecialOpenAll	Special	
+9	PVP挑戰賽結算P幣加倍			0	InterfacePVP	1	bounsshow003	PvpCoinDouble	PVP	
+10	精選套裝	Activity_Item		0	InterfaceLottery	1	bounsshow011	LotteryChoice	Lottery	
+11	單次儲值禮包	ActivityIapOne		0	InterfaceIAP	0	bounsshow006	IAP_One		
+12	累積儲值滿額禮包	ActivityIapAcc	vcoin	0	InterfaceIAP	0	bounsshow008	IAP_Acc		
+13	限時登錄獎勵	Activity_Premiums		0		2	bounsshow005	TimeSign		
+14	儲值區鑽石購買加送物品	ActivityIapItem		0	InterfaceIAP	0	bounsshow006	IAP_Item		
+16	十連抽保底物品變動(鈔票)	Activity_Item		0	InterfaceLottery	1	bounsshow017	LotteryTenChange_N	Lottery	Normal
+17	十連抽保底物品變動(鑽石)	Activity_Item		0	InterfaceLottery	1	bounsshow014	LotteryTenChange_V	Lottery	Virtual
+18	扭蛋價格調整(精選)			0	InterfaceLottery	1	bounsshow016	LotteryCost_C	Lottery	Choice
+19	扭蛋價格調整(鈔票)			0	InterfaceLottery	1	bounsshow017	LotteryCost_N	Lottery	Normal
+20	扭蛋價格調整(鑽石)			0	InterfaceLottery	1	bounsshow014	LotteryCost_V	Lottery	Virtual
+21	扭蛋變動(精選)	Activity_Item		0	InterfaceLottery	1	bounsshow016	LotteryAdd_C	Lottery	Choice
+22	扭蛋變動(鈔票)	Activity_Item		0	InterfaceLottery	1	bounsshow017	LotteryAdd_N	Lottery	Normal
+23	扭蛋變動(鑽石)	Activity_Item		0	InterfaceLottery	1	bounsshow014	LotteryAdd_V	Lottery	Virtual
+24	菁英爭霸賽			0	InterfaceElite	1	bounsshow013	EliteBattle	EliteBattle	
+25	刺客來襲			0	InterfaceAssassin	1	Icon_Mission01	Assassin		
+400	排行榜-多次兌換	ActivityExchangeNeedItemMany		1		-1	bounsshow006	Rank_ExchangeMany		
+500	排行榜-一次兌換	ActivityExchangeNeedItemOne		1		-1	bounsshow006	Rank_ExchangeOne		
+600	排行榜-累計兌換	ActivityItemAcc	V	0		-1	bounsshow008	Rank_Acc		
+900	排行榜-多次兌換	ActivityExchangeNeedItemMany		1		-1	bounsshow006	Rank_ManyExchangeMany		
+1000	排行榜-一次兌換	ActivityExchangeNeedItemOne		1		-1	bounsshow006	Rank_ManyExchangeOne		

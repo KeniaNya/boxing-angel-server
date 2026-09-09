@@ -1,0 +1,25 @@
+﻿類型	說明	物件	圖名稱
+1	購買角色	1	B_button_01
+2	完成一般類型指定關卡	3	
+3	完成精英類型指定關卡	3	
+4	提升品質	2	Icon_Mission02
+5_0102	收集泳裝	1	C_button_02
+5_0103	收集拳套	1	C_button_03
+5_0105	收集拳擊鞋	1	C_button_04
+5_0101	收集髮型	1	C_button_01
+5_0106	收集飾品	1	C_button_05
+6	製作	0	
+7	拳館等級	2	Icon_Mission02
+8	路人挑戰	2	Icon_Mission01
+9	虛擬幣換成遊戲幣	5	UI_Store_exchange
+10	轉蛋	2	bounsshow011
+11	升級技能	1	B_button_03
+12	領AP	0	0202011
+13	包月	4	UI_Store_card
+14	完成任意關卡挑戰	2	Icon_Mission01
+15	完成一般類型非指定關卡	3	F_button_01
+16	完成精英類型非指定關卡	3	F_button_02
+17	完成會外賽類型關卡	2	bounsshow009
+18	完成特殊聯賽類型關卡	2	bounsshow007
+19	完成PVP類型關卡	2	bounsshow003
+20	完成菁英挑戰賽	6	Button_L08

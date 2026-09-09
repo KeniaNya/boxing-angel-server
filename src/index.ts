@@ -5,6 +5,7 @@
 // Convencion LenaCloud: escucha en process.env.PORT. Estado persistente en LENA_APPDATA.
 
 import { settingsZip, bundleDatabaseList, type SettingsConfig } from "./settings.ts";
+import { loadHandlerModules } from "./game.ts";
 import { createAccount, verifyAccount, loadAccounts, accountCount, HTTP_WRONG_DATA } from "./accounts.ts";
 import { handleSocket, sessionCount } from "./socket.ts";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
@@ -74,6 +75,8 @@ function handleLogin(action: string, q: URLSearchParams): Response {
       return json({ res: HTTP_WRONG_DATA });
   }
 }
+
+await loadHandlerModules(log);
 
 const server = Bun.serve({
   port: PORT,

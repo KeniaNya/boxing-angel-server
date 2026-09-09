@@ -1,10 +1,13 @@
 // Logica de juego: un handler por mensaje C2S. Cada handler devuelve los frames S2C a enviar.
 // Los formatos vienen del cliente decompilado (clases *S2C.Parse) y de sus stubs offline.
 
+import { readdirSync } from "node:fs";
+import { join } from "node:path";
 import { resolveToken } from "./accounts.ts";
 import { loadPlayer, createPlayer, savePlayer, newSessionKey, type Player, type Role } from "./players.ts";
+import { s2c, type Frame } from "./economy.ts";
 
-export type Frame = { methodName: string; paramObject: Record<string, unknown> };
+export type { Frame };
 export type GameSession = {
   id: string;
   createdAt: number;
@@ -15,15 +18,38 @@ export type GameSession = {
   sessionKey?: string;
 };
 
-type Handler = (s: GameSession, p: Record<string, unknown>, log: (...a: unknown[]) => void) => Frame[] | Promise<Frame[]>;
+export type Log = (...a: unknown[]) => void;
+export type Handler = (s: GameSession, p: Record<string, unknown>, log: Log) => Frame[] | Promise<Frame[]>;
+/** Handler que exige jugador logueado (los modulos de src/handlers/ usan este tipo). */
+export type PlayerHandler = (ctx: { s: GameSession; p: Player; params: Record<string, unknown>; log: Log }) => Frame[] | Promise<Frame[]>;
 
 // Codigos (Localization del cliente): Login_1002 "Not enough Data" · Login_1005 "no records in this server"
 // (= crear personaje) · Login_1008 "Multiple login" · Login_1014 "Certification failed" · CreatePlayer_1026 "name taken"
 // · CreatePlayer_1009 "max 12 chars" · Docking_1018 "Expired" · GetOtherRoles_1015 "Not login"
 export const RES = { OK: 0, NO_DATA: 1002, WRONG_DATA: 1003, NO_RECORDS: 1005, MULTI_LOGIN: 1008, CERT_FAILED: 1014, NOT_LOGIN: 1015, EXPIRED: 1018, NAME_TAKEN: 1026, NAME_TOO_LONG: 1009 };
 
-function s2c(name: string, obj: Record<string, unknown>): Frame {
-  return { methodName: name, paramObject: { ...obj, whatTime: String(Date.now()) } };
+/**
+ * Modulos de handlers: cada archivo src/handlers/<dominio>.ts exporta `export const handlers: Record<string, PlayerHandler>`
+ * (clave = nombre del mensaje C2S). Se cargan al arrancar; un nombre repetido entre modulos es un error.
+ */
+const moduleHandlers: Record<string, PlayerHandler> = {};
+export async function loadHandlerModules(log: Log): Promise<string[]> {
+  const dir = join(import.meta.dir, "handlers");
+  let files: string[] = [];
+  try {
+    files = readdirSync(dir).filter((f) => f.endsWith(".ts") && !f.endsWith(".test.ts")).sort();
+  } catch {
+    return [];
+  }
+  for (const f of files) {
+    const mod = (await import(join(dir, f))) as { handlers?: Record<string, PlayerHandler> };
+    for (const [name, h] of Object.entries(mod.handlers ?? {})) {
+      if (moduleHandlers[name] || handlers[name]) throw new Error(`handler duplicado ${name} en ${f}`);
+      moduleHandlers[name] = h;
+    }
+  }
+  log(`handlers cargados: ${Object.keys(handlers).length + Object.keys(moduleHandlers).length} (modulos: ${files.join(", ") || "ninguno"})`);
+  return files;
 }
 
 function roleOut(r: Role) {
@@ -107,19 +133,25 @@ const handlers: Record<string, Handler> = {
   },
 };
 
-export async function dispatch(s: GameSession, method: string, params: Record<string, unknown>, log: (...a: unknown[]) => void): Promise<Frame[]> {
+export async function dispatch(s: GameSession, method: string, params: Record<string, unknown>, log: Log): Promise<Frame[]> {
+  const reply = method.replace(/C2S$/, "S2C");
   const h = handlers[method];
-  if (!h) {
+  const mh = moduleHandlers[method];
+  if (!h && !mh) {
     log("mensaje sin handler:", method, JSON.stringify(params).slice(0, 200));
-    const reply = method.replace(/C2S$/, "S2C");
     return [s2c(reply, { res: 0 })];
   }
   try {
-    const out = await h(s, params, log);
+    let out: Frame[];
+    if (h) out = await h(s, params, log);
+    else {
+      if (!s.player) return [s2c(reply, { res: RES.NOT_LOGIN })];
+      out = await mh!({ s, p: s.player, params, log });
+    }
     if (s.player) savePlayer(s.player);
     return out;
   } catch (e) {
     log("error en", method, e);
-    return [s2c(method.replace(/C2S$/, "S2C"), { res: RES.WRONG_DATA })];
+    return [s2c(reply, { res: RES.WRONG_DATA })];
   }
 }

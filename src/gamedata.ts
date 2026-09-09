@@ -15,6 +15,28 @@ function rows(name: string): string[][] {
     .map((l) => l.split("\t"));
 }
 
+/** Filas de una tabla del juego (sin la cabecera), campos separados por TAB. Cacheado. */
+const tableCache = new Map<string, string[][]>();
+export function table(name: string): string[][] {
+  let t = tableCache.get(name);
+  if (!t) {
+    t = rows(name);
+    tableCache.set(name, t);
+  }
+  return t;
+}
+
+/** Filas indexadas por el primer campo (id). */
+const indexCache = new Map<string, Map<string, string[]>>();
+export function tableById(name: string): Map<string, string[]> {
+  let m = indexCache.get(name);
+  if (!m) {
+    m = new Map(table(name).map((f) => [f[0], f]));
+    indexCache.set(name, m);
+  }
+  return m;
+}
+
 export type RoleInfo = { id: string; nameKey: string; unlockLevel: number; price: number; defaultEquip: string[] };
 
 let roles: Map<string, RoleInfo> | null = null;
