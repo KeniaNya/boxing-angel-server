@@ -11,6 +11,7 @@
 
 import type { PlayerHandler } from "../game.ts";
 import { table, roleTable } from "../gamedata.ts";
+import { config } from "../config.ts";
 import { ext, type Player, type Role, type Score } from "../players.ts";
 import {
   s2c, notice, type Frame, type RewardItem,
@@ -28,8 +29,10 @@ const PASSERS_MAX = 60; // CSDataCenter.s_BattleNpcTimesMax
 const SPECIAL_MAX = 5; // CSDataCenter.s_SpecialMaxTime (partidas diarias por capitulo especial)
 const OUTSIDE_MAX = 2; // CSDataCenter.s_OutSideMaxTime (partidas diarias por capitulo exterior)
 const ELITE_RESET_FREE = 1; // CSDataCenter.s_EliteResetFreeTimes
-const GOLD_PER_ROUND = 100; // oro base por asalto ganado (se multiplica por la columna "倍率" del capitulo)
-const ELITE_WIN_GOLD = 500; // oro base por combate de elite ganado (idem)
+// Oro base por asalto ganado / por combate de elite (se multiplica por la columna "倍率" del capitulo).
+// Editables desde el panel (config.economy).
+const GOLD_PER_ROUND = () => config().economy.goldPerRound;
+const ELITE_WIN_GOLD = () => config().economy.eliteWinGold;
 
 // ---------------------------------------------------------------------------------------------
 // Estado propio del dominio (player.ext.battle)
@@ -180,7 +183,7 @@ function highestOpenMode(p: Player, node: ChapterInfo): ChapterInfo {
 }
 /** Oro por asalto: base x multiplicador de la tabla, solo asaltos con evaluacion. */
 function roundGold(c: ChapterInfo, scores: number[]): number[] {
-  return [0, 1, 2].map((i) => ((scores[i] ?? 0) > 0 ? Math.round(GOLD_PER_ROUND * c.coinRate) : 0));
+  return [0, 1, 2].map((i) => ((scores[i] ?? 0) > 0 ? Math.round(GOLD_PER_ROUND() * c.coinRate) : 0));
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -438,7 +441,7 @@ export const handlers: Record<string, PlayerHandler> = {
     const expGain = c.expHallroad * amount;
     addPlayerExp(p, expGain);
     // recompensas deterministas (grupos seguros) x amount; el gcoin de la tabla se suma al oro
-    let gold = Math.round(GOLD_PER_ROUND * c.coinRate * 3) * amount;
+    let gold = Math.round(GOLD_PER_ROUND() * c.coinRate * 3) * amount;
     const rewards: RewardItem[] = [];
     for (const r of rollRewards(c, true)) {
       if (r.id === "gcoin") gold += r.amount * amount;
@@ -569,7 +572,7 @@ export const handlers: Record<string, PlayerHandler> = {
     role.elite_battle_hp = roleHp;
     role.elite_battle_anger = roleAnger;
     st.eliteNpc[String(index)] = { hp: tagHp, anger: tagAnger };
-    const gcoin = win ? Math.round(ELITE_WIN_GOLD * c.coinRate) : 0;
+    const gcoin = win ? Math.round(ELITE_WIN_GOLD() * c.coinRate) : 0;
     addCoin(p, "gcoin", gcoin);
     if (win) p.eb_progress = String(c.attachId);
     return [

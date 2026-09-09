@@ -239,7 +239,8 @@ function deliver(p: Player, rewards: RewardItem[]): { reward: RewardOut[]; chang
 // ---- gacha
 /** Una tirada del pool: equipo destacado, fragmentos de un destacado o un componente de relleno (pesos por tipo). */
 function rollOne(type: number, pool: string[], rnd: () => number): RewardItem {
-  const weights = type === LOTTERY.NORMAL ? [5, 35] : type === LOTTERY.VIRTUAL ? [15, 45] : [20, 50]; // % equipo, % fragmento
+  const gw = config().economy.gachaWeights; // % equipo, % fragmento (panel -> Economia)
+  const weights = type === LOTTERY.NORMAL ? gw.normal : type === LOTTERY.VIRTUAL ? gw.virtual : gw.choice;
   const roll = rnd() * 100;
   const equips = pool.filter(isEquipId);
   if (equips.length && roll < weights[0]) return { id: pick(equips, rnd), amount: 1 };
@@ -262,7 +263,7 @@ export function drawGacha(type: number, count: number, rnd: () => number = Math.
   const out: RewardItem[] = [];
   for (let i = 0; i < count; i++) out.push(rollOne(type, ids, rnd));
   const equips = ids.filter(isEquipId);
-  if (count >= 10 && equips.length && !out.some((r) => isEquipId(r.id))) out[out.length - 1] = { id: pick(equips, rnd), amount: 1 };
+  if (count >= 10 && config().economy.gachaTenGuaranteesEquip && equips.length && !out.some((r) => isEquipId(r.id))) out[out.length - 1] = { id: pick(equips, rnd), amount: 1 };
   return out;
 }
 function gachaCost(type: number, count: number): number {
@@ -365,10 +366,7 @@ export function signinCalendar(month: string): RewardOut[] {
   const rnd = seeded(hashStr("signin|" + month));
   const [y, m] = month.split("-").map(Number);
   const days = new Date(y, m, 0).getDate();
-  const cycle: RewardOut[] = [
-    { id: "gcoin", amount: 500 }, { id: "vcoin", amount: 20 }, { id: "gcoin", amount: 800 },
-    { id: "pcoin", amount: 100 }, { id: "vcoin", amount: 30 }, { id: "gcoin", amount: 1000 },
-  ];
+  const cycle: RewardOut[] = config().economy.signinCycle.map((r) => ({ id: r.id, amount: r.amount }));
   const frags = lotteryPool(LOTTERY.VIRTUAL).one.map(fragmentOfEquip).filter((f): f is FragInfo => !!f);
   const out: RewardOut[] = [];
   for (let d = 1; d <= days; d++) {

@@ -25,6 +25,7 @@ import { join } from "node:path";
 import type { PlayerHandler, Frame } from "../game.ts";
 import { s2c, grant, parseRewards, refreshAp, isCoin, notice, currentRole, type RewardItem } from "../economy.ts";
 import { table } from "../gamedata.ts";
+import { config } from "../config.ts";
 import { ext, listPlayers, savePlayer, type Player } from "../players.ts";
 
 // Codigos (Localization del cliente): *_1002 "No data" (falta parametro) · *_1003 "Wrong data" / ReceiveMailAnnex_1003
@@ -259,7 +260,7 @@ function liveMails(p: Player, now = Date.now()): Mail[] {
   m.mails = m.mails.filter((x) => x.expiryTime > now);
   if (!m.welcomed) {
     m.welcomed = true;
-    sendMail(p, WELCOME_MAIL);
+    sendMail(p, config().economy.welcomeMail); // editable desde el panel (Economia)
   }
   return m.mails;
 }

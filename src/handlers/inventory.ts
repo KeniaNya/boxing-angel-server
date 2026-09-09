@@ -17,6 +17,7 @@ import {
 } from "../economy.ts";
 import { ext, newRole, type Player, type Role, type Equip } from "../players.ts";
 import { table, tableById, roleTable } from "../gamedata.ts";
+import { config } from "../config.ts";
 
 // Codigos (Localization del cliente, <Msg>_NNNN): 1002 "faltan parametros" · 1003 "parametro incorrecto"
 // · 1005 "no existe (equipo/rol/objeto/habilidad)" · 1008 BuyRole "el rol ya existe" · 1012 "limite superado"
@@ -277,8 +278,8 @@ function starUp(p: Player, equipId: string): { res: number; equip?: Equip; creat
  *  por su nombre en pinyin: saiqianxiang = caja de oro, zuanshi* = diamantes, {yx,jl,ss,cs}zhuangbei* = equipo
  *  aleatorio de rareza C/B/A/S. El valor es la cantidad. */
 function giftPool(name: string, n: number): RewardItem[] {
-  if (name === "saiqianxiang") return [{ id: "gcoin", amount: 10000 * n }];
-  if (name.startsWith("zuanshi")) return [{ id: "vcoin", amount: 10 * n }];
+  if (name === "saiqianxiang") return [{ id: "gcoin", amount: config().economy.giftBagGold * n }];
+  if (name.startsWith("zuanshi")) return [{ id: "vcoin", amount: config().economy.giftBagDiamonds * n }];
   const rare = ({ yx: "C", jl: "B", ss: "A", cs: "S" } as Record<string, string>)[name.slice(0, 2)];
   if (!rare || !name.includes("zhuangbei")) return [];
   const pool = table("equip_info.txt").map((f) => f[0]).filter((id) => /^01\d{5}$/.test(id) && !equipInfo(id)!.hidden && equipInfo(id)!.rare === rare);

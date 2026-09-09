@@ -5,6 +5,7 @@ import { mkdirSync, existsSync, readFileSync, writeFileSync, renameSync, readdir
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
 import { roleTable, chapterIds } from "./gamedata.ts";
+import { config } from "./config.ts";
 
 const APPDATA = process.env.LENA_APPDATA || join(import.meta.dir, "..");
 const DIR = join(APPDATA, "data", "players");
@@ -166,9 +167,9 @@ export function createPlayer(acc: string, name: string, rid: string): Player {
   const role = newRole(rid);
   const p: Player = {
     acc, name, status: 10, vcoin_tal: 0, vip: 0, lv: 1, exp: 0,
-    coin: [5000, 300, 0, 0],
+    coin: [config().economy.starterGold, config().economy.starterDiamonds, 0, 0],
     last_use: rid,
-    ap: 59, ap_time: now, tp: 10, tp_time: now,
+    ap: config().economy.starterAp, ap_time: now, tp: 10, tp_time: now,
     ch_progress: "1001010", ech_progress: "1001181", eb_progress: "",
     ch_outer_times: [0, 0], ch_special_times: [0, 0, 0, 0],
     gacha_cosplay_times: 5, gacha_choice_times: 2, gacha_normal_times: 5, gacha_normal_flag: now,

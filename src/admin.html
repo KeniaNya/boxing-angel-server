@@ -77,6 +77,7 @@
   <button data-tab="players">Jugadores</button>
   <button data-tab="gift">Regalos</button>
   <button data-tab="codes">Códigos</button>
+  <button data-tab="economy">Economía</button>
   <button data-tab="catalog">Catálogo</button>
   <button data-tab="files">Descargas</button>
   <button data-tab="accounts">Cuentas</button>
@@ -185,6 +186,45 @@
   <div class="actions"><button class="btn" onclick="addCode()">Añadir / reemplazar</button><span class="msg" id="codes-msg"></span></div>
 </section>
 
+<section id="tab-economy">
+  <h2>Economía</h2>
+  <p class="msg">Números que no vienen de las tablas del juego original (eran desconocidos y están estimados). Se aplican al momento a las siguientes acciones de los jugadores. Todo lo demás (precios de tienda, costes de energía, recompensas de capítulos, PvP por puesto…) sale de las tablas del juego.</p>
+  <h3>Gacha (por tirada: % equipo destacado, % fragmentos; el resto son componentes)</h3>
+  <div class="row">
+    <div><label>Normal: % equipo</label><input type="number" id="eco-gn0" min="0" max="100"></div><div><label>Normal: % fragmentos</label><input type="number" id="eco-gn1" min="0" max="100"></div>
+    <div><label>Diamantes: % equipo</label><input type="number" id="eco-gv0" min="0" max="100"></div><div><label>Diamantes: % fragmentos</label><input type="number" id="eco-gv1" min="0" max="100"></div>
+    <div><label>Select/Cosplay: % equipo</label><input type="number" id="eco-gc0" min="0" max="100"></div><div><label>Select/Cosplay: % fragmentos</label><input type="number" id="eco-gc1" min="0" max="100"></div>
+  </div>
+  <label><input type="checkbox" id="eco-g10"> La tirada de 10 garantiza al menos un equipo</label>
+  <h3>Combates</h3>
+  <div class="row">
+    <div><label>Oro base por asalto ganado (× multiplicador del capítulo)</label><input type="number" id="eco-gold" min="0"></div>
+    <div><label>Oro base por combate de élite ganado</label><input type="number" id="eco-elite" min="0"></div>
+    <label style="align-self:end"><input type="checkbox" id="eco-pvp"> Recompensa diaria por puesto PvP</label>
+  </div>
+  <h3>Bolsas regalo y firma diaria</h3>
+  <div class="row">
+    <div><label>Oro por bolsa de oro</label><input type="number" id="eco-bagg" min="0"></div>
+    <div><label>Diamantes por bolsa de diamantes</label><input type="number" id="eco-bagd" min="0"></div>
+  </div>
+  <label>Ciclo de recompensas de firma (se repite; cada 7.º día cae un fragmento del gacha de diamantes)</label>
+  <div id="eco-signin-picker"></div>
+  <h3>Jugador nuevo</h3>
+  <div class="row">
+    <div><label>Oro inicial</label><input type="number" id="eco-sg" min="0"></div>
+    <div><label>Diamantes iniciales</label><input type="number" id="eco-sd" min="0"></div>
+    <div><label>Energía inicial</label><input type="number" id="eco-sa" min="0" max="999"></div>
+  </div>
+  <div class="row">
+    <div><label>Correo de bienvenida: remitente</label><input type="text" id="eco-wm-sender" maxlength="40"></div>
+    <div><label>Título</label><input type="text" id="eco-wm-title" maxlength="80"></div>
+  </div>
+  <label>Mensaje</label><textarea id="eco-wm-content" style="min-height:60px"></textarea>
+  <label>Adjuntos del correo de bienvenida</label>
+  <div id="eco-mail-picker"></div>
+  <div class="actions"><button class="btn" onclick="saveEconomy()">Guardar economía</button><span class="msg" id="eco-msg"></span></div>
+</section>
+
 <section id="tab-catalog">
   <h2>Catálogo del juego</h2>
   <p class="msg">Todo lo que existe en las tablas del juego con su nombre en inglés, para saber qué es cada id. Los ids de objetos, equipo y fragmentos son los que se usan en regalos y códigos.</p>
@@ -264,7 +304,8 @@ function showApp() {
   $('login').classList.add('hidden'); $('app').classList.remove('hidden'); $('logout').style.display = '';
   api('dictionary').then(function (d) { dict = d; loadCodes(); });
   loadStatus(); loadConfig(); loadOpenChapters(); loadPlayers(); loadAccounts(); loadLog(); loadCatalog(); loadFiles();
-  ['gift-items-picker', 'code-items-picker', 'pd-items-picker'].forEach(makePicker);
+  ['gift-items-picker', 'code-items-picker', 'pd-items-picker', 'eco-signin-picker', 'eco-mail-picker'].forEach(makePicker);
+  loadEconomy();
 }
 if (token) api('status').then(showApp).catch(function () { $('token').value = token; });
 
@@ -331,6 +372,33 @@ function renderOpenChapters() {
   }).join('');
   $('cfg-schedule').querySelector('tbody').innerHTML = Object.keys(openSchedule).map(function (d) { return '<tr><td>' + DAYS[d] + '</td><td>' + openSchedule[d].map(chapterLabel).join(', ') + '</td></tr>'; }).join('');
   $('cfg-openAuto').onchange = function () { openConfigured = $('cfg-openAuto').checked ? [] : openToday.slice(); renderOpenChapters(); };
+}
+
+// ---- economía
+function setPicker(id, rewards) { var r = $(id); r.items = rewards.map(function (x) { return { id: x.id, name: nameOf(x.id), amount: x.amount }; }); r.render(); }
+function loadEconomy() {
+  api('config').then(function (c) {
+    var e = c.economy;
+    $('eco-gn0').value = e.gachaWeights.normal[0]; $('eco-gn1').value = e.gachaWeights.normal[1];
+    $('eco-gv0').value = e.gachaWeights.virtual[0]; $('eco-gv1').value = e.gachaWeights.virtual[1];
+    $('eco-gc0').value = e.gachaWeights.choice[0]; $('eco-gc1').value = e.gachaWeights.choice[1];
+    $('eco-g10').checked = e.gachaTenGuaranteesEquip;
+    $('eco-gold').value = e.goldPerRound; $('eco-elite').value = e.eliteWinGold; $('eco-pvp').checked = e.pvpDailyRewards;
+    $('eco-bagg').value = e.giftBagGold; $('eco-bagd').value = e.giftBagDiamonds;
+    $('eco-sg').value = e.starterGold; $('eco-sd').value = e.starterDiamonds; $('eco-sa').value = e.starterAp;
+    $('eco-wm-sender').value = e.welcomeMail.sender; $('eco-wm-title').value = e.welcomeMail.title; $('eco-wm-content').value = e.welcomeMail.content;
+    setPicker('eco-signin-picker', e.signinCycle); setPicker('eco-mail-picker', e.welcomeMail.annex);
+  });
+}
+function saveEconomy() {
+  var economy = {
+    gachaWeights: { normal: [Number($('eco-gn0').value), Number($('eco-gn1').value)], virtual: [Number($('eco-gv0').value), Number($('eco-gv1').value)], choice: [Number($('eco-gc0').value), Number($('eco-gc1').value)] },
+    gachaTenGuaranteesEquip: $('eco-g10').checked, goldPerRound: Number($('eco-gold').value), eliteWinGold: Number($('eco-elite').value), pvpDailyRewards: $('eco-pvp').checked,
+    giftBagGold: Number($('eco-bagg').value), giftBagDiamonds: Number($('eco-bagd').value), signinCycle: pickerRewards('eco-signin-picker'),
+    starterGold: Number($('eco-sg').value), starterDiamonds: Number($('eco-sd').value), starterAp: Number($('eco-sa').value),
+    welcomeMail: { sender: $('eco-wm-sender').value, title: $('eco-wm-title').value, content: $('eco-wm-content').value, annex: pickerRewards('eco-mail-picker') },
+  };
+  api('config', { method: 'PUT', body: { economy: economy } }).then(function () { msg('eco-msg', 'Guardado', 'ok'); }).catch(function (e) { msg('eco-msg', e.message, 'err'); });
 }
 
 // ---- catálogo

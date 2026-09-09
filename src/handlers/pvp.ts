@@ -28,6 +28,7 @@ import {
   type RewardItem,
 } from "../economy.ts";
 import { ext, listPlayers, loadPlayer, savePlayer, type Player, type Role } from "../players.ts";
+import { config } from "../config.ts";
 import { table, tableById, roleTable } from "../gamedata.ts";
 
 // Codigos (Localization del cliente): *_1002 "No data" · *_1003 "Wrong data" · RegisterPvPContestant_1008
@@ -313,6 +314,7 @@ function rewardFrames(p: Player, rewards: RewardItem[]): Frame[] {
 
 /** Recompensa diaria por el rango que se mantiene (gcoin/vcoin/objetos de pvp_reward_info); el pcoin se gana por victoria. */
 function dailyRankReward(p: Player): Frame[] {
+  if (!config().economy.pvpDailyRewards) return [];
   const e = st(p);
   const today = dayKey();
   if (e.rewardDay === today) return [];

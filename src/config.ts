@@ -27,6 +27,32 @@ export type ServerConfig = {
   openChapters: string[];
   /** Mensaje de mantenimiento: si no esta vacio, el login HTTP responde error y el cliente lo muestra */
   maintenance: string;
+  /** Parametros de economia que no vienen de las tablas del juego (editables desde el panel) */
+  economy: Economy;
+};
+
+export type Economy = {
+  /** Gacha: % de equipo y % de fragmentos por tirada (el resto son componentes). Claves: normal, virtual, choice */
+  gachaWeights: Record<"normal" | "virtual" | "choice", [number, number]>;
+  /** La tirada de 10 garantiza al menos un equipo */
+  gachaTenGuaranteesEquip: boolean;
+  /** Oro base por asalto ganado en historia (se multiplica por la columna de oro del capitulo) */
+  goldPerRound: number;
+  /** Oro base por combate de elite ganado */
+  eliteWinGold: number;
+  /** Recompensa diaria por puesto PvP (pvp_reward_info) al abrir el PvP */
+  pvpDailyRewards: boolean;
+  /** Bolsas regalo: oro por unidad (saiqianxiang) y diamantes por unidad (zuanshi*) */
+  giftBagGold: number;
+  giftBagDiamonds: number;
+  /** Calendario de firma: ciclo de recompensas (cada 7 dias cae un fragmento del gacha de diamantes) */
+  signinCycle: RewardItem[];
+  /** Jugador nuevo: oro, diamantes y energia iniciales */
+  starterGold: number;
+  starterDiamonds: number;
+  starterAp: number;
+  /** Correo de bienvenida */
+  welcomeMail: { sender: string; title: string; content: string; annex: RewardItem[] };
 };
 
 const APPDATA = process.env.LENA_APPDATA || join(import.meta.dir, "..");
@@ -49,6 +75,28 @@ export const DEFAULTS: ServerConfig = {
   },
   openChapters: [],
   maintenance: "",
+  economy: {
+    gachaWeights: { normal: [5, 35], virtual: [15, 45], choice: [20, 50] },
+    gachaTenGuaranteesEquip: true,
+    goldPerRound: 100,
+    eliteWinGold: 500,
+    pvpDailyRewards: true,
+    giftBagGold: 10000,
+    giftBagDiamonds: 10,
+    signinCycle: [
+      { id: "gcoin", amount: 500 }, { id: "vcoin", amount: 20 }, { id: "gcoin", amount: 800 },
+      { id: "pcoin", amount: 100 }, { id: "vcoin", amount: 30 }, { id: "gcoin", amount: 1000 },
+    ],
+    starterGold: 5000,
+    starterDiamonds: 300,
+    starterAp: 59,
+    welcomeMail: {
+      sender: "Boxing Angel",
+      title: "Welcome to Boxing Angel!",
+      content: "Thanks for joining the community server. Here is a small gift to get you started. Have fun!",
+      annex: [{ id: "gcoin", amount: 3000 }, { id: "vcoin", amount: 50 }, { id: "0202005", amount: 2 }],
+    },
+  },
 };
 
 let current: ServerConfig | null = null;
@@ -72,6 +120,9 @@ function merge(base: ServerConfig, patch: Partial<ServerConfig>): ServerConfig {
   out.news = { ...base.news, ...(patch.news ?? {}) };
   if (patch.redeemCodes) out.redeemCodes = { ...patch.redeemCodes };
   if (patch.openChapters) out.openChapters = [...patch.openChapters];
+  out.economy = { ...base.economy, ...(patch.economy ?? {}) };
+  out.economy.gachaWeights = { ...base.economy.gachaWeights, ...(patch.economy?.gachaWeights ?? {}) };
+  out.economy.welcomeMail = { ...base.economy.welcomeMail, ...(patch.economy?.welcomeMail ?? {}) };
   return out;
 }
 
@@ -124,6 +175,7 @@ export function updateConfig(patch: Partial<ServerConfig>): ServerConfig {
     p.openChapters = patch.openChapters.map(String).filter((s) => /^\d{4}$/.test(s));
   }
   if (patch.maintenance !== undefined) p.maintenance = String(patch.maintenance).slice(0, 500);
+  if (patch.economy) p.economy = validateEconomy(patch.economy);
 
   current = merge(config(), p);
   mkdirSync(join(APPDATA, "data"), { recursive: true });
@@ -135,6 +187,48 @@ export function updateConfig(patch: Partial<ServerConfig>): ServerConfig {
 
 export function onConfigChange(fn: (c: ServerConfig) => void): void {
   listeners.push(fn);
+}
+
+function num(v: unknown, name: string, min: number, max: number, integer = true): number {
+  const n = Number(v);
+  if (!Number.isFinite(n) || n < min || n > max || (integer && !Number.isInteger(n))) throw new Error(`${name}: valor invalido (${min}-${max})`);
+  return n;
+}
+
+/** Valida un parche parcial de economia sobre la configuracion actual. */
+function validateEconomy(e: Partial<Economy>): Economy {
+  const cur = config().economy;
+  const out: Economy = { ...cur, gachaWeights: { ...cur.gachaWeights }, welcomeMail: { ...cur.welcomeMail } };
+  if (e.gachaWeights) {
+    for (const k of ["normal", "virtual", "choice"] as const) {
+      const w = e.gachaWeights[k];
+      if (!w) continue;
+      const a = num(w[0], `gacha ${k} equipo %`, 0, 100), b = num(w[1], `gacha ${k} fragmento %`, 0, 100);
+      if (a + b > 100) throw new Error(`gacha ${k}: equipo + fragmento no puede superar 100 %`);
+      out.gachaWeights[k] = [a, b];
+    }
+  }
+  if (e.gachaTenGuaranteesEquip !== undefined) out.gachaTenGuaranteesEquip = !!e.gachaTenGuaranteesEquip;
+  if (e.goldPerRound !== undefined) out.goldPerRound = num(e.goldPerRound, "oro por asalto", 0, 1_000_000);
+  if (e.eliteWinGold !== undefined) out.eliteWinGold = num(e.eliteWinGold, "oro por elite", 0, 1_000_000);
+  if (e.pvpDailyRewards !== undefined) out.pvpDailyRewards = !!e.pvpDailyRewards;
+  if (e.giftBagGold !== undefined) out.giftBagGold = num(e.giftBagGold, "oro de bolsa", 0, 10_000_000);
+  if (e.giftBagDiamonds !== undefined) out.giftBagDiamonds = num(e.giftBagDiamonds, "diamantes de bolsa", 0, 1_000_000);
+  if (e.signinCycle) {
+    out.signinCycle = normalizeRewards(e.signinCycle);
+    if (out.signinCycle.length < 1) throw new Error("el ciclo de firma necesita al menos una recompensa");
+  }
+  if (e.starterGold !== undefined) out.starterGold = num(e.starterGold, "oro inicial", 0, 10_000_000);
+  if (e.starterDiamonds !== undefined) out.starterDiamonds = num(e.starterDiamonds, "diamantes iniciales", 0, 1_000_000);
+  if (e.starterAp !== undefined) out.starterAp = num(e.starterAp, "energia inicial", 0, 999);
+  if (e.welcomeMail) {
+    const m = e.welcomeMail;
+    if (m.sender !== undefined) out.welcomeMail.sender = String(m.sender).slice(0, 40) || "Boxing Angel";
+    if (m.title !== undefined) out.welcomeMail.title = String(m.title).slice(0, 80);
+    if (m.content !== undefined) out.welcomeMail.content = String(m.content).slice(0, 500);
+    if (m.annex !== undefined) out.welcomeMail.annex = normalizeRewards(m.annex);
+  }
+  return out;
 }
 
 /** Lista de recompensas saneada: {id, amount} con id alfanumerico y cantidad entera positiva. */
