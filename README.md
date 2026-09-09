@@ -11,7 +11,23 @@ despliega en LenaCloud (`lena up`).
 | `http://<host>/BALoginServer/Login/Create\|Verify\|FastAccBinding` | `src/index.ts` → `handleLogin` (cuentas en `LENA_APPDATA/data/accounts.json`) |
 | `http://boxingangel-thai.monogame.in.th/boxingangel/setting/v1_0/<nombre>.zip` | `GET /boxingangel/setting/<ver>/<nombre>.zip` (zip generado al vuelo, `src/settings.ts`) |
 | `.../boxingangel/bundles/Google/Android/BundleDatabaseList.txt` | índice vacío: el cliente carga todo desde el OBB |
-| Servidor de juego TCP (`LoginC2S`, `PlayChapterC2S`…) | pendiente (fase 4); con `GAME_CONNECTION=0` el cliente usa su modo offline integrado |
+| Servidor de juego TCP (`LoginC2S`, `PlayChapterC2S`…) | `src/socket.ts` (transporte HTTP) + `src/game.ts` (handlers). El cliente parcheado lleva `BAHttpSocket.dll`, que sustituye al socket TCP por POSTs. |
+
+## Transporte HTTP del "socket"
+
+El cliente original abre un TCP con frames `[len:4 BE][JSON]`. El parcheado usa:
+
+| Endpoint | Cabecera | Cuerpo | Respuesta |
+|---|---|---|---|
+| `POST /socket/connect` | — | `{}` | `{"session": id}` |
+| `POST /socket/send` | `X-BA-Session` | `{"methodName":"XxxC2S","paramObject":"<json>"}` | `[ {"methodName":"XxxS2C","paramObject":{…}}, … ]` (respuestas + push pendientes) |
+| `POST /socket/poll` | `X-BA-Session` | `{}` | `[frames pendientes]` |
+| `POST /socket/close` | `X-BA-Session` | `{}` | `{"ok":true}` |
+
+Los handlers viven en `src/game.ts` (uno por `*C2S`); los mensajes sin handler reciben `{res:0}`
+y se registran en el log para implementarlos. Estado de jugador en `LENA_APPDATA/data/players/`.
+La tabla de red ofrece dos servidores: id 1 offline (stubs del cliente) e id 2 comunitario
+(`connection=1`); `GAME_CONNECTION` decide cuál es el recomendado.
 
 ## Variables de entorno (`server.env`)
 
