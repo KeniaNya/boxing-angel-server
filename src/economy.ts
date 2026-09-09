@@ -126,7 +126,7 @@ export function currentRole(p: Player): Role {
 
 // ---- AP (energia): se regenera con el tiempo. El cliente calcula la regeneracion a partir de
 // ap/ap_time (ms), asi que el servidor solo tiene que llevar la cuenta con la misma regla.
-export const AP_REGEN_MS = 5 * 60 * 1000; // 1 AP cada 5 min
+export const AP_REGEN_MS = 360 * 1000; // 1 AP cada 360 s (CSDataCenter.s_RecoveryAPTime)
 export function refreshAp(p: Player, now = Date.now()): void {
   const max = maxAp(p.lv);
   if (p.ap >= max) {

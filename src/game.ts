@@ -5,7 +5,53 @@ import { readdirSync } from "node:fs";
 import { join } from "node:path";
 import { resolveToken } from "./accounts.ts";
 import { loadPlayer, createPlayer, savePlayer, newSessionKey, type Player, type Role } from "./players.ts";
-import { s2c, type Frame } from "./economy.ts";
+import { s2c, refreshAp, type Frame } from "./economy.ts";
+// Ganchos entre dominios (los modulos se cargan tambien dinamicamente; aqui solo se usan sus helpers)
+import { refreshShopDaily } from "./handlers/shop.ts";
+import { refreshPvpDay } from "./handlers/pvp.ts";
+import { refreshFriendDay } from "./handlers/friends.ts";
+import { onEvent as missionEvent, newMailNotice } from "./handlers/missions.ts";
+
+/** Reinicios diarios centralizados (se aplican en el login y antes de cada mensaje). */
+function dailyRefresh(p: Player): void {
+  refreshAp(p);
+  refreshShopDaily(p);
+  refreshPvpDay(p);
+  refreshFriendDay(p);
+}
+
+/** Mensaje C2S -> evento de mision (solo si la respuesta principal fue res 0). */
+const MISSION_HOOKS: Record<string, (params: Record<string, unknown>, p: Player, before: Snapshot) => string | null> = {
+  StartGachaC2S: () => "gacha",
+  startWishPoolGachaC2S: () => "gacha",
+  BuyRoleC2S: () => "buy_role",
+  ReportPvPBattleResultsC2S: () => "pvp",
+  ReportEliteBattleC2S: () => "elite_battle",
+  LevelUpSkillC2S: () => "skill_upgrade",
+  MakeEquipC2S: () => "manufacture",
+  MakeC2S: () => "manufacture",
+  ReportChapterC2S: (params, _p, before) => (String(params.isPass) === "true" && before.playing ? `chapter_clear:${before.playing}` : null),
+};
+type Snapshot = { lv: number; playing: string | null; coin: number[] };
+function snapshot(p: Player): Snapshot {
+  const battle = p.ext?.battle as { playing?: string | null } | undefined;
+  return { lv: p.lv, playing: battle?.playing ?? null, coin: [...p.coin] };
+}
+function missionHooks(method: string, params: Record<string, unknown>, p: Player, before: Snapshot, log: Log): Frame[] {
+  const out: Frame[] = [];
+  const push = (ev: string | null) => {
+    if (!ev) return;
+    try {
+      out.push(...missionEvent(p, ev));
+    } catch (e) {
+      log("evento de mision", ev, "fallo:", e);
+    }
+  };
+  push(MISSION_HOOKS[method]?.(params, p, before) ?? null);
+  if (p.lv !== before.lv) push("level_up");
+  if (p.coin.some((c, i) => c !== before.coin[i])) push("coin_change");
+  return out;
+}
 
 export type { Frame };
 export type GameSession = {
@@ -33,7 +79,10 @@ export const RES = { OK: 0, NO_DATA: 1002, WRONG_DATA: 1003, NO_RECORDS: 1005, M
  * (clave = nombre del mensaje C2S). Se cargan al arrancar; un nombre repetido entre modulos es un error.
  */
 const moduleHandlers: Record<string, PlayerHandler> = {};
+let loadedModules: string[] | null = null;
 export async function loadHandlerModules(log: Log): Promise<string[]> {
+  if (loadedModules) return loadedModules; // idempotente (los tests lo llaman por sesion)
+  loadedModules = [];
   const dir = join(import.meta.dir, "handlers");
   let files: string[] = [];
   try {
@@ -49,6 +98,7 @@ export async function loadHandlerModules(log: Log): Promise<string[]> {
     }
   }
   log(`handlers cargados: ${Object.keys(handlers).length + Object.keys(moduleHandlers).length} (modulos: ${files.join(", ") || "ninguno"})`);
+  loadedModules = files;
   return files;
 }
 
@@ -67,7 +117,15 @@ function loginFrames(s: GameSession, p: Player): Frame[] {
   const role = p.roles[p.last_use] ?? Object.values(p.roles)[0];
   s.sessionKey = newSessionKey();
   s.player = p;
+  dailyRefresh(p);
+  try {
+    missionEvent(p, "login");
+  } catch {
+    /* las misiones nunca bloquean el login */
+  }
+  const mail = newMailNotice(p);
   return [
+    ...(mail ? [mail] : []),
     s2c("LoginS2C", { res: 0, step: 4, size: 4, score: p.scores }),
     s2c("LoginS2C", { res: 0, step: 3, size: 3, player: playerOut(p), role: roleOut(role), session_key: s.sessionKey, server_time: Date.now() }),
     s2c("LoginS2C", { res: 0, step: 2, size: 2, skill: p.skills.map((k) => ({ id: k.id, strengthen_prop: k.strengthen_prop })) }),
@@ -146,7 +204,11 @@ export async function dispatch(s: GameSession, method: string, params: Record<st
     if (h) out = await h(s, params, log);
     else {
       if (!s.player) return [s2c(reply, { res: RES.NOT_LOGIN })];
-      out = await mh!({ s, p: s.player, params, log });
+      const p = s.player;
+      dailyRefresh(p);
+      const before = snapshot(p);
+      out = await mh!({ s, p, params, log });
+      if (out[0] && Number(out[0].paramObject.res) === 0) out = [...out, ...missionHooks(method, params, p, before, log)];
     }
     if (s.player) savePlayer(s.player);
     return out;
