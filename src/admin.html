@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Boxing Angel · panel</title>
+<style>
+  :root { --bg:#14101c; --panel:#1f1830; --line:#3a2d52; --text:#f1eaff; --muted:#a898c8; --accent:#ff4fa3; --ok:#5ee1a0; --warn:#ffcf5a; --err:#ff6b6b; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:14px/1.45 system-ui, Segoe UI, sans-serif; }
+  header { display:flex; align-items:center; gap:16px; padding:12px 20px; background:var(--panel); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:2; }
+  header h1 { font-size:16px; margin:0; letter-spacing:.3px; }
+  header .status { color:var(--muted); font-size:12px; margin-left:auto; }
+  nav { display:flex; gap:4px; padding:10px 20px 0; flex-wrap:wrap; }
+  nav button { background:transparent; border:1px solid var(--line); border-bottom:none; color:var(--muted); padding:8px 14px; border-radius:8px 8px 0 0; cursor:pointer; }
+  nav button.active { background:var(--panel); color:var(--text); }
+  main { padding:16px 20px 40px; max-width:1200px; }
+  section { display:none; background:var(--panel); border:1px solid var(--line); border-radius:0 10px 10px 10px; padding:18px; }
+  section.active { display:block; }
+  h2 { font-size:15px; margin:0 0 12px; color:var(--accent); }
+  h3 { font-size:13px; margin:18px 0 8px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; }
+  label { display:block; margin:8px 0 4px; color:var(--muted); font-size:12px; }
+  input[type=text], input[type=number], textarea, select { width:100%; background:#120d1c; color:var(--text); border:1px solid var(--line); border-radius:6px; padding:8px; font:inherit; }
+  textarea { min-height:120px; font-family:ui-monospace, Consolas, monospace; font-size:12px; }
+  input[type=checkbox] { transform:scale(1.2); margin-right:8px; }
+  .row { display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; }
+  .btn { background:var(--accent); color:#fff; border:none; border-radius:6px; padding:8px 14px; cursor:pointer; font:inherit; }
+  .btn.secondary { background:#3a2d52; }
+  .btn.danger { background:#b3364e; }
+  .btn:disabled { opacity:.5; cursor:default; }
+  .actions { margin-top:14px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .msg { font-size:12px; color:var(--muted); }
+  .msg.ok { color:var(--ok); } .msg.err { color:var(--err); }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th, td { text-align:left; padding:6px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { color:var(--muted); font-weight:600; }
+  tr.click { cursor:pointer; } tr.click:hover { background:#2a2140; }
+  .stats { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:10px; }
+  .stat { background:#120d1c; border:1px solid var(--line); border-radius:8px; padding:12px; }
+  .stat b { display:block; font-size:22px; }
+  .stat span { color:var(--muted); font-size:12px; }
+  pre { background:#0d0a14; border:1px solid var(--line); border-radius:8px; padding:12px; max-height:480px; overflow:auto; font-size:12px; white-space:pre-wrap; }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+  .chip { background:#2a2140; border:1px solid var(--line); border-radius:14px; padding:3px 10px; font-size:12px; }
+  .chip button { background:none; border:none; color:var(--err); cursor:pointer; margin-left:4px; }
+  .suggest { position:relative; }
+  .suggest ul { position:absolute; left:0; right:0; top:100%; background:#120d1c; border:1px solid var(--line); border-radius:6px; margin:0; padding:0; list-style:none; max-height:220px; overflow:auto; z-index:3; display:none; }
+  .suggest ul li { padding:6px 8px; cursor:pointer; font-size:12px; } .suggest ul li:hover { background:#2a2140; }
+  .login { max-width:420px; margin:80px auto; }
+  code { background:#0d0a14; padding:1px 5px; border-radius:4px; font-size:12px; }
+  details { margin-top:10px; } summary { cursor:pointer; color:var(--muted); }
+  .hidden { display:none !important; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Boxing Angel · panel de control</h1>
+  <span class="status" id="hdr-status">sin conectar</span>
+  <button class="btn secondary" id="logout" style="display:none">Salir</button>
+</header>
+
+<div class="login" id="login">
+  <section class="active">
+    <h2>Acceso</h2>
+    <p class="msg">Introduce el <code>ADMIN_TOKEN</code> definido en <code>server.env</code> del servidor.</p>
+    <label>Token</label>
+    <input type="text" id="token" autocomplete="off">
+    <div class="actions"><button class="btn" id="login-btn">Entrar</button><span class="msg" id="login-msg"></span></div>
+  </section>
+</div>
+
+<div id="app" class="hidden">
+<nav>
+  <button data-tab="status" class="active">Estado</button>
+  <button data-tab="config">Configuración</button>
+  <button data-tab="news">Noticias</button>
+  <button data-tab="players">Jugadores</button>
+  <button data-tab="gift">Regalos</button>
+  <button data-tab="codes">Códigos</button>
+  <button data-tab="accounts">Cuentas</button>
+  <button data-tab="log">Log</button>
+</nav>
+<main>
+
+<section id="tab-status" class="active">
+  <h2>Estado del servidor</h2>
+  <div class="stats" id="stats"></div>
+  <div class="actions"><button class="btn secondary" onclick="loadStatus()">Actualizar</button></div>
+</section>
+
+<section id="tab-config">
+  <h2>Configuración del servidor de juego</h2>
+  <p class="msg">Los cambios se aplican al momento en el servidor. El cliente los descarga al reiniciar el juego (tabla de configuración) o al hacer la siguiente petición (gacha, códigos, capítulos).</p>
+  <div class="row">
+    <div>
+      <label>Servidor recomendado en el login</label>
+      <select id="cfg-connection"><option value="1">Comunitario (online)</option><option value="0">Offline (modo local del cliente)</option></select>
+    </div>
+    <div><label>Nombre del servidor</label><input type="text" id="cfg-networkName" maxlength="24"></div>
+    <div><label>Versión de datos (súbela para forzar re-descarga de tablas)</label><input type="number" id="cfg-dataVersion" min="1"></div>
+    <div>
+      <label>Tercer panel del gacha</label>
+      <select id="cfg-gachaType"><option value="1">Select (elegir premio)</option><option value="2">Cosplay</option></select>
+    </div>
+  </div>
+  <h3>Funciones del cliente</h3>
+  <div class="row">
+    <label><input type="checkbox" id="cfg-showTutorial"> Tutorial para jugadores nuevos</label>
+    <label><input type="checkbox" id="cfg-isNPC"> Personajes NPC en el lobby</label>
+    <label><input type="checkbox" id="cfg-isStory"> Historia</label>
+    <label><input type="checkbox" id="cfg-isPVP"> PvP</label>
+  </div>
+  <h3>Capítulos especiales abiertos hoy</h3>
+  <input type="text" id="cfg-openChapters" placeholder="1501,1502,1601,1602,1603,1604">
+  <h3>Mantenimiento</h3>
+  <p class="msg">Si escribes un mensaje, el login HTTP se rechaza y el cliente lo muestra. Déjalo vacío para abrir el servidor.</p>
+  <input type="text" id="cfg-maintenance" placeholder="(vacío = servidor abierto)">
+  <div class="actions"><button class="btn" onclick="saveConfig()">Guardar</button><span class="msg" id="cfg-msg"></span></div>
+</section>
+
+<section id="tab-news">
+  <h2>Noticias</h2>
+  <p class="msg">Se muestran en el popup del login y en los paneles web del lobby. El cuerpo admite HTML sencillo.</p>
+  <label>Título</label><input type="text" id="news-title" maxlength="200">
+  <label>Cuerpo (HTML)</label><textarea id="news-body"></textarea>
+  <div class="actions"><button class="btn" onclick="saveNews()">Publicar</button><a class="btn secondary" href="/news/index.html" target="_blank" style="text-decoration:none">Ver página</a><span class="msg" id="news-msg"></span></div>
+</section>
+
+<section id="tab-players">
+  <h2>Jugadores</h2>
+  <div class="actions"><input type="text" id="players-q" placeholder="Buscar por cuenta o nombre" style="max-width:320px"><button class="btn secondary" onclick="loadPlayers()">Buscar</button></div>
+  <table id="players-table"><thead><tr><th>Cuenta</th><th>Nombre</th><th>Nivel</th><th>Oro</th><th>Diamantes</th><th>PvP</th><th>Elite</th><th>VIP</th><th>Progreso</th><th>Último login</th></tr></thead><tbody></tbody></table>
+  <div id="player-detail" class="hidden">
+    <h3>Editar <span id="pd-acc"></span></h3>
+    <div class="row">
+      <div><label>Nombre</label><input type="text" id="pd-name" maxlength="12"></div>
+      <div><label>Nivel de gimnasio</label><input type="number" id="pd-lv"></div>
+      <div><label>VIP</label><input type="number" id="pd-vip"></div>
+      <div><label>Energía (AP)</label><input type="number" id="pd-ap"></div>
+      <div><label>Puntos de entrenamiento (TP)</label><input type="number" id="pd-tp"></div>
+      <div><label>Oro</label><input type="number" id="pd-c0"></div>
+      <div><label>Diamantes</label><input type="number" id="pd-c1"></div>
+      <div><label>Monedas PvP</label><input type="number" id="pd-c2"></div>
+      <div><label>Monedas Elite</label><input type="number" id="pd-c3"></div>
+      <div><label>Progreso de capítulo (id)</label><input type="text" id="pd-progress"></div>
+      <div><label>Tutorial (teaching_flag)</label><input type="number" id="pd-teaching"></div>
+    </div>
+    <div class="actions"><button class="btn" onclick="savePlayer()">Guardar cambios</button><button class="btn secondary" onclick="giftTo(currentAcc)">Enviar regalo a este jugador</button><span class="msg" id="pd-msg"></span></div>
+    <h3>Entregar objetos directamente al inventario</h3>
+    <div id="pd-items-picker"></div>
+    <div class="actions"><button class="btn secondary" onclick="grantItems()">Entregar</button><span class="msg" id="pd-items-msg"></span></div>
+    <details><summary>JSON completo del jugador</summary><pre id="pd-json"></pre></details>
+  </div>
+</section>
+
+<section id="tab-gift">
+  <h2>Regalos por correo</h2>
+  <p class="msg">Llega al buzón del juego con los objetos como adjunto. "Todos" incluye a los jugadores que ya existen ahora.</p>
+  <div class="row">
+    <div><label>Destinatario</label><select id="gift-to"><option value="all">Todos los jugadores</option></select></div>
+    <div><label>Remitente</label><input type="text" id="gift-sender" value="Boxing Angel"></div>
+    <div><label>Días hasta caducar</label><input type="number" id="gift-ttl" value="30" min="1" max="365"></div>
+  </div>
+  <label>Título</label><input type="text" id="gift-title" placeholder="Gift from the community server">
+  <label>Mensaje</label><textarea id="gift-content" style="min-height:70px"></textarea>
+  <h3>Adjuntos</h3>
+  <div id="gift-items-picker"></div>
+  <div class="actions"><button class="btn" onclick="sendGift()">Enviar</button><span class="msg" id="gift-msg"></span></div>
+</section>
+
+<section id="tab-codes">
+  <h2>Códigos de canje</h2>
+  <p class="msg">Cada jugador puede canjear un código una sola vez (Ajustes → código en el juego).</p>
+  <table id="codes-table"><thead><tr><th>Código</th><th>Recompensas</th><th></th></tr></thead><tbody></tbody></table>
+  <h3>Nuevo código</h3>
+  <div class="row"><div><label>Código (mayúsculas, 3-32)</label><input type="text" id="code-name" maxlength="32"></div></div>
+  <div id="code-items-picker"></div>
+  <div class="actions"><button class="btn" onclick="addCode()">Añadir / reemplazar</button><span class="msg" id="codes-msg"></span></div>
+</section>
+
+<section id="tab-accounts">
+  <h2>Cuentas del login</h2>
+  <table id="accounts-table"><thead><tr><th>Cuenta</th><th>Tipo</th><th>Creada</th><th>Último login</th></tr></thead><tbody></tbody></table>
+</section>
+
+<section id="tab-log">
+  <h2>Log reciente</h2>
+  <div class="actions"><button class="btn secondary" onclick="loadLog()">Actualizar</button><label style="margin:0"><input type="checkbox" id="log-auto"> auto (5 s)</label></div>
+  <pre id="log"></pre>
+</section>
+
+</main>
+</div>
+
+<script>
+var token = localStorage.getItem('ba_admin_token') || '';
+var currentAcc = null;
+var catalogCache = null;
+
+function $(id) { return document.getElementById(id); }
+function msg(id, text, cls) { var el = $(id); el.textContent = text; el.className = 'msg ' + (cls || ''); }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+function api(path, opts) {
+  opts = opts || {};
+  var headers = { 'authorization': 'Bearer ' + token };
+  if (opts.body !== undefined) { headers['content-type'] = 'application/json'; opts.body = JSON.stringify(opts.body); }
+  opts.headers = headers;
+  return fetch('/admin/api/' + path, opts).then(function (r) {
+    return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || ('HTTP ' + r.status)); return j; });
+  });
+}
+
+// ---- acceso
+$('login-btn').onclick = function () {
+  token = $('token').value.trim();
+  api('status').then(function () { localStorage.setItem('ba_admin_token', token); showApp(); })
+    .catch(function (e) { msg('login-msg', e.message, 'err'); });
+};
+$('logout').onclick = function () { localStorage.removeItem('ba_admin_token'); location.reload(); };
+function showApp() {
+  $('login').classList.add('hidden'); $('app').classList.remove('hidden'); $('logout').style.display = '';
+  loadStatus(); loadConfig(); loadPlayers(); loadCodes(); loadAccounts(); loadLog();
+  ['gift-items-picker', 'code-items-picker', 'pd-items-picker'].forEach(makePicker);
+}
+if (token) api('status').then(showApp).catch(function () { $('token').value = token; });
+
+// ---- pestañas
+document.querySelectorAll('nav button').forEach(function (b) {
+  b.onclick = function () {
+    document.querySelectorAll('nav button').forEach(function (x) { x.classList.remove('active'); });
+    document.querySelectorAll('main section').forEach(function (x) { x.classList.remove('active'); });
+    b.classList.add('active'); $('tab-' + b.dataset.tab).classList.add('active');
+  };
+});
+
+// ---- estado
+function loadStatus() {
+  api('status').then(function (s) {
+    var up = s.uptimeSeconds, h = Math.floor(up / 3600), m = Math.floor((up % 3600) / 60);
+    $('hdr-status').textContent = 'conectado · ' + (s.config.connection ? 'online' : 'offline') + ' · ' + s.sessions + ' sesiones';
+    $('stats').innerHTML = [
+      ['Cuentas', s.accounts], ['Jugadores', s.players], ['Sesiones activas', s.sessions],
+      ['Tiempo en marcha', h + ' h ' + m + ' min'], ['Servidor recomendado', s.config.connection ? 'Comunitario' : 'Offline'],
+      ['Gacha 3º panel', s.config.gachaType === 2 ? 'Cosplay' : 'Select'], ['Mantenimiento', s.config.maintenance ? 'ACTIVO' : 'no'],
+    ].map(function (x) { return '<div class="stat"><b>' + esc(x[1]) + '</b><span>' + esc(x[0]) + '</span></div>'; }).join('');
+  }).catch(function (e) { msg('hdr-status', e.message, 'err'); });
+}
+
+// ---- configuración
+function loadConfig() {
+  api('config').then(function (c) {
+    $('cfg-connection').value = String(c.connection);
+    $('cfg-networkName').value = c.networkName;
+    $('cfg-dataVersion').value = c.dataVersion;
+    $('cfg-gachaType').value = String(c.gachaType);
+    ['showTutorial', 'isNPC', 'isStory', 'isPVP'].forEach(function (k) { $('cfg-' + k).checked = !!c.flags[k]; });
+    $('cfg-openChapters').value = c.openChapters.join(',');
+    $('cfg-maintenance').value = c.maintenance || '';
+    $('news-title').value = c.news.title; $('news-body').value = c.news.body;
+  });
+}
+function saveConfig() {
+  var patch = {
+    connection: Number($('cfg-connection').value), networkName: $('cfg-networkName').value,
+    dataVersion: Number($('cfg-dataVersion').value), gachaType: Number($('cfg-gachaType').value),
+    flags: { showTutorial: $('cfg-showTutorial').checked ? 1 : 0, isNPC: $('cfg-isNPC').checked ? 1 : 0, isStory: $('cfg-isStory').checked ? 1 : 0, isPVP: $('cfg-isPVP').checked ? 1 : 0 },
+    openChapters: $('cfg-openChapters').value.split(',').map(function (s) { return s.trim(); }).filter(Boolean),
+    maintenance: $('cfg-maintenance').value,
+  };
+  api('config', { method: 'PUT', body: patch }).then(function () { msg('cfg-msg', 'Guardado', 'ok'); loadStatus(); })
+    .catch(function (e) { msg('cfg-msg', e.message, 'err'); });
+}
+function saveNews() {
+  api('config', { method: 'PUT', body: { news: { title: $('news-title').value, body: $('news-body').value } } })
+    .then(function () { msg('news-msg', 'Publicado', 'ok'); }).catch(function (e) { msg('news-msg', e.message, 'err'); });
+}
+
+// ---- selector de objetos (reutilizable): input con sugerencias + chips con cantidad
+function makePicker(id) {
+  var root = $(id); if (!root || root.dataset.ready) return; root.dataset.ready = '1';
+  root.items = [];
+  root.innerHTML = '<div class="row"><div class="suggest"><label>Objeto (busca por nombre o id)</label><input type="text" class="q" placeholder="Diamonds, Gold, glove, 0201001..."><ul></ul></div><div><label>Cantidad</label><input type="number" class="n" value="1" min="1"></div><div><label>&nbsp;</label><button class="btn secondary add">Añadir</button></div></div><div class="chips"></div>';
+  var q = root.querySelector('.q'), ul = root.querySelector('ul'), n = root.querySelector('.n');
+  var chosen = null;
+  q.oninput = function () {
+    chosen = null;
+    var v = q.value.trim(); if (!v) { ul.style.display = 'none'; return; }
+    api('items?q=' + encodeURIComponent(v)).then(function (list) {
+      ul.innerHTML = list.map(function (i) { return '<li data-id="' + esc(i.id) + '" data-name="' + esc(i.name) + '">' + esc(i.name) + ' <span style="color:#a898c8">' + esc(i.id) + ' · ' + esc(i.kind) + '</span></li>'; }).join('');
+      ul.style.display = list.length ? 'block' : 'none';
+      ul.querySelectorAll('li').forEach(function (li) { li.onclick = function () { chosen = { id: li.dataset.id, name: li.dataset.name }; q.value = li.dataset.name + ' (' + li.dataset.id + ')'; ul.style.display = 'none'; }; });
+    });
+  };
+  root.querySelector('.add').onclick = function () {
+    var id = chosen ? chosen.id : q.value.trim(); var name = chosen ? chosen.name : id;
+    var amount = Math.max(1, Math.floor(Number(n.value) || 1));
+    if (!id) return;
+    root.items.push({ id: id, name: name, amount: amount }); q.value = ''; chosen = null; render();
+  };
+  function render() {
+    root.querySelector('.chips').innerHTML = root.items.map(function (it, i) { return '<span class="chip">' + esc(it.name) + ' × ' + it.amount + '<button data-i="' + i + '">✕</button></span>'; }).join('');
+    root.querySelectorAll('.chip button').forEach(function (b) { b.onclick = function () { root.items.splice(Number(b.dataset.i), 1); render(); }; });
+  }
+  root.render = render;
+  root.clear = function () { root.items = []; render(); };
+}
+function pickerRewards(id) { return $(id).items.map(function (i) { return { id: i.id, amount: i.amount }; }); }
+
+// ---- jugadores
+function loadPlayers() {
+  api('players?q=' + encodeURIComponent($('players-q').value.trim())).then(function (list) {
+    var tb = $('players-table').querySelector('tbody');
+    tb.innerHTML = list.map(function (p) {
+      return '<tr class="click" data-acc="' + esc(p.acc) + '"><td>' + esc(p.acc) + '</td><td>' + esc(p.name) + '</td><td>' + p.lv + '</td><td>' + p.coin[0] + '</td><td>' + p.coin[1] + '</td><td>' + p.coin[2] + '</td><td>' + p.coin[3] + '</td><td>' + p.vip + '</td><td>' + esc(p.ch_progress) + '</td><td>' + esc(p.lastLoginAt ? p.lastLoginAt.replace('T', ' ').slice(0, 16) : '-') + '</td></tr>';
+    }).join('') || '<tr><td colspan="10" class="msg">Sin jugadores</td></tr>';
+    tb.querySelectorAll('tr.click').forEach(function (tr) { tr.onclick = function () { openPlayer(tr.dataset.acc); }; });
+    var sel = $('gift-to'); sel.innerHTML = '<option value="all">Todos los jugadores (' + list.length + ')</option>' + list.map(function (p) { return '<option value="' + esc(p.acc) + '">' + esc(p.name) + ' · ' + esc(p.acc) + '</option>'; }).join('');
+  });
+}
+function openPlayer(acc) {
+  currentAcc = acc;
+  api('players/' + encodeURIComponent(acc)).then(function (p) {
+    $('player-detail').classList.remove('hidden');
+    $('pd-acc').textContent = acc + ' (' + p.name + ')';
+    $('pd-name').value = p.name; $('pd-lv').value = p.lv; $('pd-vip').value = p.vip; $('pd-ap').value = p.ap; $('pd-tp').value = p.tp;
+    for (var i = 0; i < 4; i++) $('pd-c' + i).value = p.coin[i];
+    $('pd-progress').value = p.ch_progress; $('pd-teaching').value = p.teaching_flag;
+    $('pd-json').textContent = JSON.stringify(p, null, 2);
+    $('player-detail').scrollIntoView({ behavior: 'smooth' });
+  });
+}
+function savePlayer() {
+  var b = { name: $('pd-name').value, lv: Number($('pd-lv').value), vip: Number($('pd-vip').value), ap: Number($('pd-ap').value), tp: Number($('pd-tp').value),
+    coin: [0, 1, 2, 3].map(function (i) { return Number($('pd-c' + i).value); }), ch_progress: $('pd-progress').value, teaching_flag: Number($('pd-teaching').value) };
+  api('players/' + encodeURIComponent(currentAcc), { method: 'PATCH', body: b }).then(function () { msg('pd-msg', 'Guardado (el jugador lo verá al volver a entrar)', 'ok'); loadPlayers(); })
+    .catch(function (e) { msg('pd-msg', e.message, 'err'); });
+}
+function grantItems() {
+  var rewards = pickerRewards('pd-items-picker'); if (!rewards.length) { msg('pd-items-msg', 'Añade algún objeto', 'err'); return; }
+  api('players/' + encodeURIComponent(currentAcc) + '/items', { method: 'POST', body: { rewards: rewards } })
+    .then(function () { msg('pd-items-msg', 'Entregado', 'ok'); $('pd-items-picker').clear(); openPlayer(currentAcc); })
+    .catch(function (e) { msg('pd-items-msg', e.message, 'err'); });
+}
+function giftTo(acc) {
+  document.querySelector('nav button[data-tab=gift]').click();
+  $('gift-to').value = acc;
+}
+
+// ---- regalos
+function sendGift() {
+  var to = $('gift-to').value;
+  var body = { to: to === 'all' ? 'all' : [to], sender: $('gift-sender').value, title: $('gift-title').value, content: $('gift-content').value, annex: pickerRewards('gift-items-picker'), ttlDays: Number($('gift-ttl').value) };
+  if (to === 'all' && !confirm('¿Enviar el regalo a TODOS los jugadores?')) return;
+  api('gift', { method: 'POST', body: body }).then(function (r) { msg('gift-msg', 'Enviado a ' + r.sent + ' jugador(es)', 'ok'); $('gift-items-picker').clear(); })
+    .catch(function (e) { msg('gift-msg', e.message, 'err'); });
+}
+
+// ---- códigos
+var codes = {};
+function loadCodes() {
+  api('config').then(function (c) { codes = c.redeemCodes; renderCodes(); });
+}
+function renderCodes() {
+  var tb = $('codes-table').querySelector('tbody');
+  tb.innerHTML = Object.keys(codes).map(function (k) {
+    return '<tr><td><code>' + esc(k) + '</code></td><td>' + codes[k].map(function (r) { return esc(r.id) + ' × ' + r.amount; }).join(', ') + '</td><td><button class="btn danger" data-k="' + esc(k) + '">Borrar</button></td></tr>';
+  }).join('') || '<tr><td colspan="3" class="msg">Sin códigos</td></tr>';
+  tb.querySelectorAll('button').forEach(function (b) { b.onclick = function () { delete codes[b.dataset.k]; saveCodes(); }; });
+}
+function addCode() {
+  var name = $('code-name').value.trim().toUpperCase(); var rewards = pickerRewards('code-items-picker');
+  if (!name || !rewards.length) { msg('codes-msg', 'Falta el código o las recompensas', 'err'); return; }
+  codes[name] = rewards; saveCodes(); $('code-name').value = ''; $('code-items-picker').clear();
+}
+function saveCodes() {
+  api('config', { method: 'PUT', body: { redeemCodes: codes } }).then(function (c) { codes = c.redeemCodes; renderCodes(); msg('codes-msg', 'Guardado', 'ok'); })
+    .catch(function (e) { msg('codes-msg', e.message, 'err'); loadCodes(); });
+}
+
+// ---- cuentas
+function loadAccounts() {
+  api('accounts').then(function (list) {
+    $('accounts-table').querySelector('tbody').innerHTML = list.map(function (a) {
+      return '<tr><td>' + esc(a.acc) + '</td><td>' + a.type + '</td><td>' + esc(a.createdAt.replace('T', ' ').slice(0, 16)) + '</td><td>' + esc(a.lastLoginAt ? a.lastLoginAt.replace('T', ' ').slice(0, 16) : '-') + '</td></tr>';
+    }).join('') || '<tr><td colspan="4" class="msg">Sin cuentas</td></tr>';
+  });
+}
+
+// ---- log
+function loadLog() {
+  api('log?n=300').then(function (r) { var pre = $('log'); pre.textContent = r.lines.join('\n'); pre.scrollTop = pre.scrollHeight; });
+}
+setInterval(function () { if ($('log-auto').checked && !$('app').classList.contains('hidden')) loadLog(); }, 5000);
+</script>
+</body>
+</html>

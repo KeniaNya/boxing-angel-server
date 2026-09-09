@@ -18,6 +18,7 @@
 import type { PlayerHandler, Frame } from "../game.ts";
 import { s2c, notice, coin, addCoin, pay, itemCount, addItem, removeItem, addEquip, findEquip, isEquipId, isCoin, type RewardItem } from "../economy.ts";
 import { table, tableById } from "../gamedata.ts";
+import { config } from "../config.ts";
 import { ext, type Player, type Equip } from "../players.ts";
 
 // Codigos (Localization del cliente): *_1002 "faltan parametros" · *_1003 "parametro incorrecto" · StartGacha_1016 /
@@ -462,12 +463,12 @@ export const handlers: Record<string, PlayerHandler> = {
       [costAt(COST_COL.LOTTERY_VIRTUAL, 0), costAt(COST_COL.LOTTERY_VIRTUAL, 1)],
       [costAt(COST_COL.LOTTERY_CHOICE, 0)],
     ];
-    return [s2c("GetGachaInfoS2C", { res: R.OK, type: 1, id, coin: coinList, info: choiceInfo() })];
+    return [s2c("GetGachaInfoS2C", { res: R.OK, type: config().gachaType, id, coin: coinList, info: choiceInfo() })];
   },
 
   /** Info del gacha de seleccion: type, id (evento, string) e info (objetos elegibles). El cliente actual no lo envia. */
   GetChoiceGachaInfoC2S() {
-    return [s2c("GetChoiceGachaInfoS2C", { res: R.OK, type: 1, id: GACHA_EVENT[3], info: choiceInfo() })];
+    return [s2c("GetChoiceGachaInfoS2C", { res: R.OK, type: config().gachaType, id: GACHA_EVENT[3], info: choiceInfo() })];
   },
 
   /** Elegir premio tras 6 tiradas de Choice/Cosplay: reward {id, amount} (+ change_reward objeto si es duplicado); resetea el contador. */
@@ -628,7 +629,7 @@ export const handlers: Record<string, PlayerHandler> = {
   CodeRedemptionC2S({ p, params, log }) {
     if (params.code === undefined) return [s2c("CodeRedemptionS2C", { res: R.NO_DATA })];
     const code = String(params.code).trim().toUpperCase();
-    const rewards = REDEEM_CODES[code];
+    const rewards = config().redeemCodes[code] ?? REDEEM_CODES[code];
     if (!code || !rewards) return [s2c("CodeRedemptionS2C", { res: R.NOT_FOUND })];
     const s = st(p);
     if (s.redeemed.includes(code)) return [s2c("CodeRedemptionS2C", { res: R.ALREADY })];

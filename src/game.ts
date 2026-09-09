@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { resolveToken } from "./accounts.ts";
 import { loadPlayer, createPlayer, savePlayer, newSessionKey, type Player, type Role } from "./players.ts";
 import { s2c, refreshAp, type Frame } from "./economy.ts";
+import { config } from "./config.ts";
 // Ganchos entre dominios (los modulos se cargan tambien dinamicamente; aqui solo se usan sus helpers)
 import { refreshShopDaily } from "./handlers/shop.ts";
 import { refreshPvpDay } from "./handlers/pvp.ts";
@@ -187,7 +188,7 @@ const handlers: Record<string, Handler> = {
 
   GetTodayOpenChapterC2S() {
     // Capitulos especiales abiertos hoy (tipo+subtipo). Igual que el stub offline: todos abiertos.
-    return [s2c("GetTodayOpenChapterS2C", { res: 0, list: ["1501", "1502", "1601", "1602", "1603", "1604"] })];
+    return [s2c("GetTodayOpenChapterS2C", { res: 0, list: config().openChapters })];
   },
 };
 

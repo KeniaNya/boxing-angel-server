@@ -82,3 +82,8 @@ export function resolveToken(token: string): Session | undefined {
 export function accountCount(): number {
   return accounts.size;
 }
+
+/** Todas las cuentas (para el panel de administracion). */
+export function listAccounts(): Account[] {
+  return [...accounts.values()];
+}

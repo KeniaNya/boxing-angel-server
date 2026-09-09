@@ -6,6 +6,9 @@
 
 import { settingsZip, bundleDatabaseList, type SettingsConfig } from "./settings.ts";
 import { loadHandlerModules } from "./game.ts";
+import { config, onConfigChange, newsHtml } from "./config.ts";
+import { handleAdmin } from "./admin.ts";
+import { log } from "./logbuf.ts";
 import { createAccount, verifyAccount, loadAccounts, accountCount, HTTP_WRONG_DATA } from "./accounts.ts";
 import { handleSocket, sessionCount } from "./socket.ts";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
@@ -14,19 +17,22 @@ import { join } from "node:path";
 const PORT = Number(process.env.PORT || 8090);
 const HOST = process.env.PUBLIC_HOST || "boxingangel.lenasuite.org";
 const BASE_URL = process.env.PUBLIC_BASE_URL || `http://${HOST}`;
-const CONNECTION = (process.env.GAME_CONNECTION === "1" ? 1 : 0) as 0 | 1;
 const GAME_HOST = process.env.GAME_SERVER_HOST || HOST;
 const GAME_PORT = Number(process.env.GAME_SERVER_PORT || 80); // transporte HTTP: BAHttpSocket omite el puerto si es 80
 
-const settingsCfg: SettingsConfig = {
-  host: HOST,
-  baseUrl: BASE_URL,
-  connection: CONNECTION,
-  clientVersions: (process.env.CLIENT_VERSIONS || "1.0.18,1.0.17,1.0.16,1.0.15,1.0.14,1.0.13,1.0.12,1.0.11,1.0.10,1.0.9,1.0.8,1.0.7,1.0.6,1.0.5,1.0.4,1.0.3,1.0.2,1.0.1,1.0.0,1.0").split(","),
-  networkName: process.env.NETWORK_NAME || "Community",
-  dataVersion: Number(process.env.DATA_VERSION || 1),
-  flags: { showTutorial: 1, isNPC: 1, isStory: 1, isPVP: 0 },
-};
+/** Configuracion de las tablas de Setting a partir de la configuracion editable (panel /admin). */
+function settingsCfg(): SettingsConfig {
+  const c = config();
+  return {
+    host: HOST,
+    baseUrl: BASE_URL,
+    connection: c.connection,
+    clientVersions: (process.env.CLIENT_VERSIONS || "1.0.18,1.0.17,1.0.16,1.0.15,1.0.14,1.0.13,1.0.12,1.0.11,1.0.10,1.0.9,1.0.8,1.0.7,1.0.6,1.0.5,1.0.4,1.0.3,1.0.2,1.0.1,1.0.0,1.0").split(","),
+    networkName: c.networkName,
+    dataVersion: c.dataVersion,
+    flags: c.flags,
+  };
+}
 
 // Tablas de datos corregidas (sobrescriben a las del OBB)
 const TABLES_DIR = join(import.meta.dir, "..", "tables");
@@ -35,7 +41,10 @@ const overrideTables = existsSync(TABLES_DIR)
   : [];
 
 const startedAt = new Date();
-const zipBytes = settingsZip(settingsCfg, overrideTables);
+let zipBytes = settingsZip(settingsCfg(), overrideTables);
+onConfigChange(() => {
+  zipBytes = settingsZip(settingsCfg(), overrideTables);
+});
 const nAccounts = loadAccounts();
 
 const json = (body: unknown, status = 200) =>
@@ -43,13 +52,9 @@ const json = (body: unknown, status = 200) =>
 const text = (body: string, status = 200, type = "text/plain; charset=utf-8") =>
   new Response(body, { status, headers: { "content-type": type } });
 
-function log(...parts: unknown[]) {
-  console.log(new Date().toISOString(), ...parts);
-}
-
 /** Lista de servidores de juego que devuelve Verify. Con connection=0 el cliente ni la usa. */
 function gameList() {
-  return [{ id: 1, ip: GAME_HOST, name: settingsCfg.networkName, port: String(GAME_PORT), psize: "0", status: "0" }];
+  return [{ id: 1, ip: GAME_HOST, name: config().networkName, port: String(GAME_PORT), psize: "0", status: "0" }];
 }
 
 function handleLogin(action: string, q: URLSearchParams): Response {
@@ -63,6 +68,10 @@ function handleLogin(action: string, q: URLSearchParams): Response {
       return json({ res });
     }
     case "Verify": {
+      if (config().maintenance) {
+        log("login/Verify", acc, "-> mantenimiento");
+        return json({ res: HTTP_WRONG_DATA, msg: config().maintenance });
+      }
       const r = verifyAccount(acc, pwd);
       log("login/Verify", acc, "->", r.res);
       if (r.res !== 0) return json({ res: r.res });
@@ -84,6 +93,9 @@ const server = Bun.serve({
   fetch(req) {
     const url = new URL(req.url);
     const p = url.pathname;
+
+    // Panel de control (token en ADMIN_TOKEN)
+    if (p === "/admin" || p.startsWith("/admin/")) return handleAdmin(p, req, { startedAt });
 
     // Login server original: http://<host>/BALoginServer/Login/<Create|Verify|FastAccBinding>?acc=&pwd=&type=&ver=
     const login = p.match(/^\/BALoginServer\/Login\/([A-Za-z]+)\/?$/);
@@ -112,13 +124,13 @@ const server = Bun.serve({
     }
 
     if (p === "/news/index.html" || p === "/news/") {
-      return text(NEWS_HTML, 200, "text/html; charset=utf-8");
+      return text(newsHtml(), 200, "text/html; charset=utf-8");
     }
 
     if (p === "/download") return Response.redirect("https://apkfab.com/boxing-angel/th.in.monogame.boxingangel", 302);
 
     if (p === "/api/health") {
-      return json({ ok: true, startedAt, uptimeSeconds: Math.round((Date.now() - startedAt.getTime()) / 1000), accounts: accountCount(), sessions: sessionCount(), connection: CONNECTION, host: HOST });
+      return json({ ok: true, startedAt, uptimeSeconds: Math.round((Date.now() - startedAt.getTime()) / 1000), accounts: accountCount(), sessions: sessionCount(), connection: config().connection, host: HOST });
     }
 
     if (p === "/") return text(INDEX_HTML, 200, "text/html; charset=utf-8");
@@ -127,12 +139,6 @@ const server = Bun.serve({
     return text("not found", 404);
   },
 });
-
-const NEWS_HTML = `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width">
-<body style="margin:0;background:#1a1020;color:#f3e9ff;font-family:sans-serif;padding:16px">
-<h2 style="margin:0 0 8px">Boxing Angel · servidor comunitario</h2>
-<p>Este es un servidor no oficial mantenido por fans. El juego original cerro en 2019.</p>
-</body>`;
 
 const INDEX_HTML = `<!doctype html><meta charset="utf-8"><title>Boxing Angel community server</title>
 <body style="font-family:sans-serif;max-width:640px;margin:40px auto;padding:0 16px">
@@ -147,4 +153,4 @@ const INDEX_HTML = `<!doctype html><meta charset="utf-8"><title>Boxing Angel com
 </ul>
 </body>`;
 
-log(`Boxing Angel server escuchando en :${server.port} · host publico ${HOST} · connection=${CONNECTION} · cuentas=${nAccounts} · tablas override=${overrideTables.map((t) => t.name).join(",") || "ninguna"}`);
+log(`Boxing Angel server escuchando en :${server.port} · host publico ${HOST} · connection=${config().connection} · cuentas=${nAccounts} · tablas override=${overrideTables.map((t) => t.name).join(",") || "ninguna"}`);
