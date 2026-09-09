@@ -4,12 +4,12 @@
 
 import { config, updateConfig, normalizeRewards, type ServerConfig } from "./config.ts";
 import { catalog, dictionary, nameOf, openChapterOptions, weekSchedule, todayOpenChapters, KINDS } from "./catalog.ts";
-import { listAccounts, accountCount } from "./accounts.ts";
-import { loadPlayer, savePlayer, listPlayers, type Player } from "./players.ts";
+import { listAccounts, accountCount, deleteAccount } from "./accounts.ts";
+import { loadPlayer, savePlayer, listPlayers, deletePlayer, type Player } from "./players.ts";
 import { grant } from "./economy.ts";
 import { sendMail } from "./handlers/missions.ts";
 import { recentLog, log } from "./logbuf.ts";
-import { sessionCount } from "./socket.ts";
+import { sessionCount, closeSessionsOf } from "./socket.ts";
 import { ADMIN_HTML } from "./admin-ui.ts";
 
 const TOKEN = process.env.ADMIN_TOKEN || "";
@@ -90,9 +90,25 @@ export async function handleAdmin(path: string, req: Request, ctx: Ctx): Promise
         .map((p) => summary(p, logins.get(p.acc) ?? null));
       return json(out);
     }
+    const am = /^accounts\/([^/]+)$/.exec(route);
+    if (am && req.method === "DELETE") {
+      const acc = decodeURIComponent(am[1]);
+      const kicked = closeSessionsOf(acc);
+      const hadPlayer = deletePlayer(acc);
+      const ok = deleteAccount(acc);
+      if (!ok && !hadPlayer) return fail("cuenta no encontrada", 404);
+      log("admin: cuenta borrada", acc, `(personaje: ${hadPlayer}, sesiones cerradas: ${kicked})`);
+      return json({ ok: true, account: ok, player: hadPlayer, sessions: kicked });
+    }
     const pm = /^players\/([^/]+)(?:\/(items|mail|inventory))?$/.exec(route);
     if (pm) {
       const acc = decodeURIComponent(pm[1]);
+      if (!pm[2] && req.method === "DELETE") {
+        const kicked = closeSessionsOf(acc);
+        if (!deletePlayer(acc)) return fail("jugador no encontrado", 404);
+        log("admin: personaje borrado", acc, `(sesiones cerradas: ${kicked})`);
+        return json({ ok: true, sessions: kicked });
+      }
       const p = loadPlayer(acc);
       if (!p) return fail("jugador no encontrado", 404);
       if (!pm[2] && req.method === "GET") return json(p);

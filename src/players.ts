@@ -1,7 +1,7 @@
 // Estado de jugador (por cuenta). Persistencia en JSON dentro de LENA_APPDATA/data/players/.
 // Los nombres de campo siguen el protocolo del cliente (LoginS2C.ParsePlayer / ParseRole / ParseEquip / ParseItem).
 
-import { mkdirSync, existsSync, readFileSync, writeFileSync, renameSync, readdirSync } from "node:fs";
+import { mkdirSync, existsSync, readFileSync, writeFileSync, renameSync, readdirSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
 import { roleTable, chapterIds } from "./gamedata.ts";
@@ -105,6 +105,15 @@ export function loadPlayer(acc: string): Player | null {
   for (const r of Object.values(p.roles)) if (Number(r.auid) > 2_147_483_647) r.auid = newAuid();
   cache.set(acc, p);
   return p;
+}
+
+/** Borra el personaje de una cuenta (archivo y cache). La cuenta del login sigue existiendo: al entrar, el cliente crea uno nuevo. */
+export function deletePlayer(acc: string): boolean {
+  cache.delete(acc);
+  const f = file(acc);
+  if (!existsSync(f)) return false;
+  unlinkSync(f);
+  return true;
 }
 
 export function savePlayer(p: Player) {

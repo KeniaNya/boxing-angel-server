@@ -79,6 +79,14 @@ export function resolveToken(token: string): Session | undefined {
   return sessions.get(token);
 }
 
+/** Borra una cuenta del login (y sus sesiones). El personaje se borra aparte (players.deletePlayer). */
+export function deleteAccount(acc: string): boolean {
+  if (!accounts.delete(acc)) return false;
+  for (const [t, s] of sessions) if (s.acc === acc) sessions.delete(t);
+  save();
+  return true;
+}
+
 export function accountCount(): number {
   return accounts.size;
 }

@@ -30,3 +30,12 @@ test("admin: regalo por correo, edicion y objetos directos", async () => {
   const bad = await call("PUT", "/admin/api/config", { gachaType: 9 });
   expect(bad.status).toBe(400);
 });
+
+test("admin: borrar personaje y cuenta", async () => {
+  const { p } = await testSession();
+  const r1 = await call("DELETE", "/admin/api/players/" + encodeURIComponent(p.acc));
+  expect(r1.status).toBe(200);
+  expect(loadPlayer(p.acc)).toBeNull();
+  const r2 = await call("DELETE", "/admin/api/players/" + encodeURIComponent(p.acc));
+  expect(r2.status).toBe(404);
+});

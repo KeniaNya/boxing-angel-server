@@ -149,7 +149,7 @@
       <div><label>Progreso de capítulo (id)</label><input type="text" id="pd-progress"></div>
       <div><label>Tutorial (teaching_flag)</label><input type="number" id="pd-teaching"></div>
     </div>
-    <div class="actions"><button class="btn" onclick="savePlayer()">Guardar cambios</button><button class="btn secondary" onclick="giftTo(currentAcc)">Enviar regalo a este jugador</button><span class="msg" id="pd-msg"></span></div>
+    <div class="actions"><button class="btn" onclick="savePlayer()">Guardar cambios</button><button class="btn secondary" onclick="giftTo(currentAcc)">Enviar regalo a este jugador</button><button class="btn danger" onclick="deletePlayer()">Borrar personaje (reinicia el tutorial)</button><span class="msg" id="pd-msg"></span></div>
     <h3>Entregar objetos directamente al inventario</h3>
     <div id="pd-items-picker"></div>
     <div class="actions"><button class="btn secondary" onclick="grantItems()">Entregar</button><span class="msg" id="pd-items-msg"></span></div>
@@ -205,7 +205,8 @@
 
 <section id="tab-accounts">
   <h2>Cuentas del login</h2>
-  <table id="accounts-table"><thead><tr><th>Cuenta</th><th>Tipo</th><th>Creada</th><th>Último login</th></tr></thead><tbody></tbody></table>
+  <p class="msg">Borrar una cuenta elimina también su personaje; el jugador tendrá que crear una cuenta nueva. Para reiniciar solo el progreso usa "Borrar personaje" en la ficha del jugador.</p>
+  <table id="accounts-table"><thead><tr><th>Cuenta</th><th>Tipo</th><th>Creada</th><th>Último login</th><th></th></tr></thead><tbody></tbody></table>
 </section>
 
 <section id="tab-log">
@@ -410,6 +411,16 @@ function grantItems() {
     .then(function () { msg('pd-items-msg', 'Entregado', 'ok'); $('pd-items-picker').clear(); openPlayer(currentAcc); })
     .catch(function (e) { msg('pd-items-msg', e.message, 'err'); });
 }
+function deletePlayer() {
+  if (!confirm('¿Borrar el personaje de ' + currentAcc + '? Perderá todo el progreso; al entrar creará uno nuevo y verá el tutorial.')) return;
+  api('players/' + encodeURIComponent(currentAcc), { method: 'DELETE' }).then(function () { msg('pd-msg', 'Personaje borrado. Si el jugador está dentro, que cierre y abra el juego.', 'ok'); $('player-detail').classList.add('hidden'); loadPlayers(); loadStatus(); })
+    .catch(function (e) { msg('pd-msg', e.message, 'err'); });
+}
+function deleteAccount(acc) {
+  if (!confirm('¿Borrar la cuenta ' + acc + ' y su personaje? No se puede deshacer.')) return;
+  api('accounts/' + encodeURIComponent(acc), { method: 'DELETE' }).then(function () { loadAccounts(); loadPlayers(); loadStatus(); })
+    .catch(function (e) { alert(e.message); });
+}
 function giftTo(acc) {
   document.querySelector('nav button[data-tab=gift]').click();
   $('gift-to').value = acc;
@@ -450,8 +461,9 @@ function saveCodes() {
 function loadAccounts() {
   api('accounts').then(function (list) {
     $('accounts-table').querySelector('tbody').innerHTML = list.map(function (a) {
-      return '<tr><td>' + esc(a.acc) + '</td><td>' + a.type + '</td><td>' + esc(a.createdAt.replace('T', ' ').slice(0, 16)) + '</td><td>' + esc(a.lastLoginAt ? a.lastLoginAt.replace('T', ' ').slice(0, 16) : '-') + '</td></tr>';
-    }).join('') || '<tr><td colspan="4" class="msg">Sin cuentas</td></tr>';
+      return '<tr><td>' + esc(a.acc) + '</td><td>' + a.type + '</td><td>' + esc(a.createdAt.replace('T', ' ').slice(0, 16)) + '</td><td>' + esc(a.lastLoginAt ? a.lastLoginAt.replace('T', ' ').slice(0, 16) : '-') + '</td><td><button class="btn danger" data-acc="' + esc(a.acc) + '">Borrar</button></td></tr>';
+    }).join('') || '<tr><td colspan="5" class="msg">Sin cuentas</td></tr>';
+    $('accounts-table').querySelectorAll('button').forEach(function (b) { b.onclick = function () { deleteAccount(b.dataset.acc); }; });
   });
 }
 

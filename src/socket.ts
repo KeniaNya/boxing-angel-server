@@ -23,6 +23,13 @@ function sweep() {
 }
 setInterval(sweep, 60_000).unref();
 
+/** Cierra las sesiones de juego de una cuenta (para que un jugador borrado no se vuelva a guardar desde memoria). */
+export function closeSessionsOf(acc: string): number {
+  let n = 0;
+  for (const [id, s] of sessions) if (s.acc === acc) { sessions.delete(id); n++; }
+  return n;
+}
+
 export function sessionCount(): number {
   return sessions.size;
 }
