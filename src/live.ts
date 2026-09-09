@@ -143,6 +143,8 @@ export function liveMessage(p: Peer, raw: string, log: Log) {
       const m = p.match;
       if (!m) return;
       m.result[p.seat] = Number(msg.win) === 1 ? 1 : 0;
+      // el rival adopta este veredicto si su combate sigue en curso (p. ej. aun en la lona)
+      send(other(m, p), { t: "peer_result", win: m.result[p.seat] });
       const [a, b] = m.result;
       if (a !== null && b !== null) {
         log(`live: partida ${m.id.slice(0, 8)} terminada: ${m.peers[0].name} ${a ? "gana" : "pierde"} / ${m.peers[1].name} ${b ? "gana" : "pierde"}${a === b ? " (INCONSISTENTE)" : ""}`);

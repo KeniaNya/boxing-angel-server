@@ -125,7 +125,9 @@ test("emparejado, reenvio, ready/go, resultado y reporte sin tocar la escalera",
   expect(ext(a.p).live).toBeNull();
 
   x.say({ t: "result", win: 1 });
+  expect(y.last("peer_result")).toEqual({ t: "peer_result", win: 1 });
   y.say({ t: "result", win: 0 });
+  expect(x.last("peer_result")).toEqual({ t: "peer_result", win: 0 });
   expect(live.liveStatus().matches).toBe(0);
   x.bye();
   y.bye();
