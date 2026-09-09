@@ -76,6 +76,9 @@ túnel lo ofrece: el token viaja en cada petición). Requiere `ADMIN_TOKEN` en `
   explicación de cada id (`src/catalog.ts`). Los ids se usan tal cual en regalos y códigos.
 - **Capítulos especiales abiertos**: Tour (15xx) y Liga especial (16xx). Por defecto rotan según
   `week_open_chapter_info` (lunes = 1); desde el panel se puede fijar una lista manual.
+- **Descargas**: publica el APK y el OBB (subida por trozos de 50 MB desde el panel; se guardan en
+  `LENA_APPDATA/data/downloads`). La pagina publica `/` los enlaza con SHA-256 e instrucciones de
+  instalacion; `/download/<nombre>` sirve los archivos con soporte de `Range`.
 - **Cuentas** y **log** reciente del servidor.
 
 API JSON en `/admin/api/*` con cabecera `Authorization: Bearer <ADMIN_TOKEN>` (ver `src/admin.ts`).

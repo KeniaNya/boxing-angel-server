@@ -8,6 +8,8 @@ import { settingsZip, bundleDatabaseList, type SettingsConfig } from "./settings
 import { loadHandlerModules } from "./game.ts";
 import { config, onConfigChange, newsHtml } from "./config.ts";
 import { handleAdmin } from "./admin.ts";
+import { publicHtml } from "./public.ts";
+import { serveFile } from "./files.ts";
 import { log } from "./logbuf.ts";
 import { createAccount, verifyAccount, loadAccounts, accountCount, HTTP_WRONG_DATA } from "./accounts.ts";
 import { handleSocket, sessionCount } from "./socket.ts";
@@ -127,30 +129,20 @@ const server = Bun.serve({
       return text(newsHtml(), 200, "text/html; charset=utf-8");
     }
 
-    if (p === "/download") return Response.redirect("https://apkfab.com/boxing-angel/th.in.monogame.boxingangel", 302);
+    // Descargas publicas (APK/OBB subidos desde el panel)
+    if (p === "/download" || p === "/download/") return Response.redirect("/", 302);
+    const dl = /^\/download\/([^/]+)$/.exec(p);
+    if (dl) return serveFile(decodeURIComponent(dl[1]), req);
 
     if (p === "/api/health") {
       return json({ ok: true, startedAt, uptimeSeconds: Math.round((Date.now() - startedAt.getTime()) / 1000), accounts: accountCount(), sessions: sessionCount(), connection: config().connection, host: HOST });
     }
 
-    if (p === "/") return text(INDEX_HTML, 200, "text/html; charset=utf-8");
+    if (p === "/" || p === "/index.html") return text(publicHtml(BASE_URL), 200, "text/html; charset=utf-8");
 
     log("404", req.method, p);
     return text("not found", 404);
   },
 });
-
-const INDEX_HTML = `<!doctype html><meta charset="utf-8"><title>Boxing Angel community server</title>
-<body style="font-family:sans-serif;max-width:640px;margin:40px auto;padding:0 16px">
-<h1>Boxing Angel · servidor comunitario</h1>
-<p>Servidor no oficial para el juego <code>th.in.monogame.boxingangel</code> (Mono Play, 2019).</p>
-<ul>
-<li><code>GET /BALoginServer/Login/Create?acc=&amp;pwd=&amp;type=</code></li>
-<li><code>GET /BALoginServer/Login/Verify?acc=&amp;pwd=&amp;type=</code></li>
-<li><code>GET /boxingangel/setting/v1_0/&lt;nombre&gt;.zip</code> · tablas de Setting</li>
-<li><code>GET /boxingangel/bundles/Google/Android/BundleDatabaseList.txt</code></li>
-<li><code>GET /api/health</code></li>
-</ul>
-</body>`;
 
 log(`Boxing Angel server escuchando en :${server.port} · host publico ${HOST} · connection=${config().connection} · cuentas=${nAccounts} · tablas override=${overrideTables.map((t) => t.name).join(",") || "ninguna"}`);

@@ -78,6 +78,7 @@
   <button data-tab="gift">Regalos</button>
   <button data-tab="codes">Códigos</button>
   <button data-tab="catalog">Catálogo</button>
+  <button data-tab="files">Descargas</button>
   <button data-tab="accounts">Cuentas</button>
   <button data-tab="log">Log</button>
 </nav>
@@ -203,6 +204,19 @@
   <table id="cat-table"><thead><tr><th>Id</th><th>Nombre</th><th>Descripción</th><th>Detalles</th></tr></thead><tbody></tbody></table>
 </section>
 
+<section id="tab-files">
+  <h2>Descargas públicas</h2>
+  <p class="msg">Los archivos se publican en la página principal del servidor (<a href="/" target="_blank" style="color:#ff9ad0">/</a>) y se descargan en <code>/download/&lt;nombre&gt;</code>. Se suben por trozos de 50 MB (límite de Cloudflare por petición), así que el OBB de 160 MB tarda un poco. Se guardan fuera del código, así que sobreviven a los redespliegues.</p>
+  <table id="files-table"><thead><tr><th>Archivo</th><th>Tamaño</th><th>SHA-256</th><th>Descripción</th><th>Actualizado</th><th></th></tr></thead><tbody></tbody></table>
+  <h3>Subir archivo</h3>
+  <div class="row">
+    <div><label>Archivo (.apk, .obb, .zip…)</label><input type="file" id="file-input"></div>
+    <div><label>Nombre en el servidor (por defecto el del archivo; el OBB debe llamarse main.2019042915.th.in.monogame.boxingangel.obb)</label><input type="text" id="file-name" placeholder="(igual que el archivo)"></div>
+    <div><label>Descripción (opcional)</label><input type="text" id="file-desc" placeholder="Versión 1.0.18 comunitaria, 2026-09-09"></div>
+  </div>
+  <div class="actions"><button class="btn" id="file-upload" onclick="uploadFile()">Subir</button><span class="msg" id="file-msg"></span></div>
+</section>
+
 <section id="tab-accounts">
   <h2>Cuentas del login</h2>
   <p class="msg">Borrar una cuenta elimina también su personaje; el jugador tendrá que crear una cuenta nueva. Para reiniciar solo el progreso usa "Borrar personaje" en la ficha del jugador.</p>
@@ -249,7 +263,7 @@ function nameOf(id) { return dict[id] || id; }
 function showApp() {
   $('login').classList.add('hidden'); $('app').classList.remove('hidden'); $('logout').style.display = '';
   api('dictionary').then(function (d) { dict = d; loadCodes(); });
-  loadStatus(); loadConfig(); loadOpenChapters(); loadPlayers(); loadAccounts(); loadLog(); loadCatalog();
+  loadStatus(); loadConfig(); loadOpenChapters(); loadPlayers(); loadAccounts(); loadLog(); loadCatalog(); loadFiles();
   ['gift-items-picker', 'code-items-picker', 'pd-items-picker'].forEach(makePicker);
 }
 if (token) api('status').then(showApp).catch(function () { $('token').value = token; });
@@ -458,6 +472,37 @@ function saveCodes() {
 }
 
 // ---- cuentas
+// ---- descargas
+function fmtSize(n) { return n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.ceil(n / 1024) + ' KB'; }
+function loadFiles() {
+  api('files').then(function (list) {
+    $('files-table').querySelector('tbody').innerHTML = list.map(function (f) {
+      return '<tr><td><a href="/download/' + encodeURIComponent(f.name) + '" style="color:#ff9ad0">' + esc(f.name) + '</a></td><td>' + fmtSize(f.size) + '</td><td><code style="font-size:10px">' + (f.sha256 ? esc(f.sha256.slice(0, 16)) + '…' : 'subiendo…') + '</code></td><td><input type="text" value="' + esc(f.description) + '" data-name="' + esc(f.name) + '" class="fdesc" style="min-width:160px"></td><td>' + esc(f.updatedAt.replace('T', ' ').slice(0, 16)) + '</td><td><button class="btn danger" data-name="' + esc(f.name) + '">Borrar</button></td></tr>';
+    }).join('') || '<tr><td colspan="6" class="msg">Sin archivos publicados</td></tr>';
+    var tb = $('files-table').querySelector('tbody');
+    tb.querySelectorAll('button').forEach(function (b) { b.onclick = function () { if (confirm('¿Borrar ' + b.dataset.name + ' del servidor?')) api('files/' + encodeURIComponent(b.dataset.name), { method: 'DELETE' }).then(loadFiles); }; });
+    tb.querySelectorAll('.fdesc').forEach(function (i) { i.onchange = function () { api('files/' + encodeURIComponent(i.dataset.name), { method: 'PATCH', body: { description: i.value } }); }; });
+  });
+}
+function uploadFile() {
+  var f = $('file-input').files[0]; if (!f) { msg('file-msg', 'Elige un archivo', 'err'); return; }
+  var name = ($('file-name').value.trim() || f.name).replace(/[^A-Za-z0-9._-]/g, '_');
+  var CHUNK = 50 * 1024 * 1024, offset = 0, btn = $('file-upload'); btn.disabled = true;
+  function next() {
+    var end = Math.min(offset + CHUNK, f.size), last = end >= f.size;
+    msg('file-msg', 'Subiendo ' + name + ' · ' + Math.round(100 * offset / f.size) + '%');
+    return fetch('/admin/api/files/' + encodeURIComponent(name) + '?first=' + (offset === 0 ? 1 : 0) + '&last=' + (last ? 1 : 0), { method: 'PUT', headers: { 'authorization': 'Bearer ' + token, 'content-type': 'application/octet-stream' }, body: f.slice(offset, end) })
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || ('HTTP ' + r.status)); return j; }); })
+      .then(function (info) {
+        offset = end;
+        if (!last) return next();
+        var d = $('file-desc').value.trim();
+        return (d ? api('files/' + encodeURIComponent(name), { method: 'PATCH', body: { description: d } }) : Promise.resolve()).then(function () { msg('file-msg', 'Publicado: ' + name + ' (' + fmtSize(info.size) + ', SHA-256 ' + info.sha256.slice(0, 16) + '…)', 'ok'); loadFiles(); });
+      });
+  }
+  next().catch(function (e) { msg('file-msg', e.message, 'err'); }).then(function () { btn.disabled = false; });
+}
+
 function loadAccounts() {
   api('accounts').then(function (list) {
     $('accounts-table').querySelector('tbody').innerHTML = list.map(function (a) {

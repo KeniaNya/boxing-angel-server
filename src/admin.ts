@@ -10,6 +10,7 @@ import { grant } from "./economy.ts";
 import { sendMail } from "./handlers/missions.ts";
 import { recentLog, log } from "./logbuf.ts";
 import { sessionCount, closeSessionsOf } from "./socket.ts";
+import { listFiles, appendChunk, setDescription, deleteFile, NAME_RE } from "./files.ts";
 import { ADMIN_HTML } from "./admin-ui.ts";
 
 const TOKEN = process.env.ADMIN_TOKEN || "";
@@ -89,6 +90,29 @@ export async function handleAdmin(path: string, req: Request, ctx: Ctx): Promise
         .filter((p) => !q || p.acc.toLowerCase().includes(q) || p.name.toLowerCase().includes(q))
         .map((p) => summary(p, logins.get(p.acc) ?? null));
       return json(out);
+    }
+    if (route === "files" && req.method === "GET") return json(listFiles());
+    const fm = /^files\/([^/]+)$/.exec(route);
+    if (fm) {
+      const name = decodeURIComponent(fm[1]);
+      if (!NAME_RE.test(name)) return fail("nombre de archivo invalido (letras, numeros, . _ -)");
+      const q = new URL(req.url).searchParams;
+      if (req.method === "PUT") {
+        // subida por trozos: ?first=1 en el primero, ?last=1 en el ultimo (cuerpo binario, <= 90 MB por peticion)
+        const data = new Uint8Array(await req.arrayBuffer());
+        const info = appendChunk(name, data, q.get("first") === "1", q.get("last") === "1");
+        if (q.get("last") === "1") log("admin: archivo publicado", name, info.size, "bytes", info.sha256);
+        return json(info);
+      }
+      if (req.method === "PATCH") {
+        setDescription(name, String((await body()).description ?? ""));
+        return json({ ok: true });
+      }
+      if (req.method === "DELETE") {
+        if (!deleteFile(name)) return fail("archivo no encontrado", 404);
+        log("admin: archivo borrado", name);
+        return json({ ok: true });
+      }
     }
     const am = /^accounts\/([^/]+)$/.exec(route);
     if (am && req.method === "DELETE") {
