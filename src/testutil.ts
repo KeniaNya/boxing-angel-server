@@ -11,6 +11,7 @@ if (!process.env.LENA_APPDATA_TEST) {
 
 const players = await import("./players.ts");
 const game = await import("./game.ts");
+type GameSession = import("./game.ts").GameSession;
 
 export const silentLog = (..._a: unknown[]) => {};
 
@@ -18,6 +19,6 @@ export const silentLog = (..._a: unknown[]) => {};
 export async function testSession(acc = "test-" + Math.random().toString(36).slice(2), rid = "1100001") {
   await game.loadHandlerModules(silentLog);
   const p = players.loadPlayer(acc) ?? players.createPlayer(acc, "Tester", rid);
-  const s: game.GameSession = { id: "s", createdAt: Date.now(), lastSeen: Date.now(), pending: [], acc, player: p, sessionKey: "k" };
+  const s: GameSession = { id: "s", createdAt: Date.now(), lastSeen: Date.now(), pending: [], acc, player: p, sessionKey: "k" };
   return { s, p, send: (method: string, params: Record<string, unknown> = {}) => game.dispatch(s, method, params, silentLog) };
 }

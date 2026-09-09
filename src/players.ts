@@ -1,7 +1,7 @@
 // Estado de jugador (por cuenta). Persistencia en JSON dentro de LENA_APPDATA/data/players/.
 // Los nombres de campo siguen el protocolo del cliente (LoginS2C.ParsePlayer / ParseRole / ParseEquip / ParseItem).
 
-import { mkdirSync, existsSync, readFileSync, writeFileSync, renameSync } from "node:fs";
+import { mkdirSync, existsSync, readFileSync, writeFileSync, renameSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
 import { roleTable, chapterIds } from "./gamedata.ts";
@@ -182,4 +182,17 @@ export function ext<T>(p: Player, key: string, init: () => T): T {
   if (!p.ext) p.ext = {};
   if (p.ext[key] === undefined) p.ext[key] = init();
   return p.ext[key] as T;
+}
+
+/** Todos los jugadores guardados (para rankings, busqueda de amigos, oponentes PvP). */
+export function listPlayers(): Player[] {
+  if (!existsSync(DIR)) return [];
+  const out: Player[] = [];
+  for (const f of readdirSync(DIR)) {
+    if (!f.endsWith(".json")) continue;
+    const acc = decodeURIComponent(f.slice(0, -5));
+    const p = loadPlayer(acc);
+    if (p) out.push(p);
+  }
+  return out;
 }
