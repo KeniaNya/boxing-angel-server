@@ -43,7 +43,10 @@ export function networkInfo(cfg: SettingsConfig): string {
     row(["id", "name", "order", "connection", "ip", "fileIP", "resourceType", "unused", "urlNews", "version", "fileUrl", "iapAndroid", "iapIos", "zipFileName", "zipFileURL", "ddmUrl"]),
     // resourceType 2 (Zip): las tablas se leen primero de la cache (nuestro zip) y si no, del OBB.
     // zipFileName "setting": el "zip de datos" es este mismo zip de Setting.
-    row([1, cfg.networkName, 1, cfg.connection, cfg.host, `${cfg.baseUrl}/boxingangel/files/`, 2, "", `${cfg.baseUrl}/news/index.html`, cfg.dataVersion, "", "", "", "setting", "", ""]),
+    // Dos entradas: la de mayor "order" es la recomendada; la otra se elige en el selector de servidor del login.
+    //   id 1 = modo offline integrado (connection 0) · id 2 = servidor comunitario (connection 1, socket HTTP)
+    row([1, `${cfg.networkName} (offline)`, cfg.connection === 0 ? 2 : 1, 0, cfg.host, `${cfg.baseUrl}/boxingangel/files/`, 2, "", `${cfg.baseUrl}/news/index.html`, cfg.dataVersion, "", "", "", "setting", "", ""]),
+    row([2, cfg.networkName, cfg.connection === 1 ? 2 : 1, 1, cfg.host, `${cfg.baseUrl}/boxingangel/files/`, 2, "", `${cfg.baseUrl}/news/index.html`, cfg.dataVersion, "", "", "", "setting", "", ""]),
   ].join(CRLF) + CRLF;
 }
 

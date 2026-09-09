@@ -6,6 +6,7 @@
 
 import { settingsZip, bundleDatabaseList, type SettingsConfig } from "./settings.ts";
 import { createAccount, verifyAccount, loadAccounts, accountCount, HTTP_WRONG_DATA } from "./accounts.ts";
+import { handleSocket, sessionCount } from "./socket.ts";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -95,6 +96,9 @@ const server = Bun.serve({
       return text(bundleDatabaseList());
     }
 
+    // "Socket" del juego sobre HTTP (cliente parcheado con BAHttpSocket)
+    if (p.startsWith("/socket/")) return handleSocket(p, req, log);
+
     if (p === "/news/index.html" || p === "/news/") {
       return text(NEWS_HTML, 200, "text/html; charset=utf-8");
     }
@@ -102,7 +106,7 @@ const server = Bun.serve({
     if (p === "/download") return Response.redirect("https://apkfab.com/boxing-angel/th.in.monogame.boxingangel", 302);
 
     if (p === "/api/health") {
-      return json({ ok: true, startedAt, uptimeSeconds: Math.round((Date.now() - startedAt.getTime()) / 1000), accounts: accountCount(), connection: CONNECTION, host: HOST });
+      return json({ ok: true, startedAt, uptimeSeconds: Math.round((Date.now() - startedAt.getTime()) / 1000), accounts: accountCount(), sessions: sessionCount(), connection: CONNECTION, host: HOST });
     }
 
     if (p === "/") return text(INDEX_HTML, 200, "text/html; charset=utf-8");
