@@ -8,7 +8,7 @@ import { settingsZip, bundleDatabaseList, type SettingsConfig } from "./settings
 import { loadHandlerModules } from "./game.ts";
 import { config, onConfigChange, newsHtml } from "./config.ts";
 import { handleAdmin } from "./admin.ts";
-import { publicHtml } from "./public.ts";
+import { publicHtml, pickLang } from "./public.ts";
 import { serveFile } from "./files.ts";
 import { log } from "./logbuf.ts";
 import { createAccount, verifyAccount, loadAccounts, accountCount, HTTP_WRONG_DATA } from "./accounts.ts";
@@ -138,7 +138,10 @@ const server = Bun.serve({
       return json({ ok: true, startedAt, uptimeSeconds: Math.round((Date.now() - startedAt.getTime()) / 1000), accounts: accountCount(), sessions: sessionCount(), connection: config().connection, host: HOST });
     }
 
-    if (p === "/" || p === "/index.html") return text(publicHtml(BASE_URL), 200, "text/html; charset=utf-8");
+    if (p === "/" || p === "/index.html") {
+      const lang = pickLang(url.searchParams.get("lang"), req.headers.get("accept-language"));
+      return new Response(publicHtml(BASE_URL, lang), { headers: { "content-type": "text/html; charset=utf-8", vary: "Accept-Language" } });
+    }
 
     log("404", req.method, p);
     return text("not found", 404);
