@@ -102,6 +102,15 @@ const server = Bun.serve({
     // "Socket" del juego sobre HTTP (cliente parcheado con BAHttpSocket)
     if (p.startsWith("/socket/")) return handleSocket(p, req, log);
 
+    // Imagenes de evento (banners del gacha): Android_connect_info.lotteryEventImage + "<id>.png?abc=..."
+    const img = /^\/boxingangel\/image\/([A-Za-z0-9_-]+\.png)$/.exec(p);
+    if (img) {
+      const path = join(import.meta.dir, "..", "static", "lottery", img[1]);
+      if (existsSync(path)) return new Response(Bun.file(path), { headers: { "content-type": "image/png", "cache-control": "public, max-age=86400" } });
+      log("404 imagen", img[1]);
+      return text("not found", 404);
+    }
+
     if (p === "/news/index.html" || p === "/news/") {
       return text(NEWS_HTML, 200, "text/html; charset=utf-8");
     }

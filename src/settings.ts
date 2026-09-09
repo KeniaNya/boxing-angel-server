@@ -57,7 +57,7 @@ export function androidConnectInfo(cfg: SettingsConfig): string {
   // 17 isPVP, 18 isFive (pedir valoracion), 19 isChangeCoin
   const header = row(["version", "bundleHost", "isExchange", "newsURL", "iapSandbox", "useCommunity", "brokenMode", "brokenModel", "lotteryEventImage", "showTutorial", "lockSystem", "useIAP", "f12", "f13", "f14", "isNPC", "isStory", "isPVP", "isFive", "isChangeCoin"]);
   const lines = cfg.clientVersions.map((v) =>
-    row([v, `${cfg.baseUrl}/boxingangel/bundles/Google`, 0, `${cfg.baseUrl}/news/index.html`, 0, 0, 0, "", "", cfg.flags.showTutorial, 0, 0, 0, 0, 0, cfg.flags.isNPC, cfg.flags.isStory, cfg.flags.isPVP, 0, 0]),
+    row([v, `${cfg.baseUrl}/boxingangel/bundles/Google`, 0, `${cfg.baseUrl}/news/index.html`, 0, 0, 0, "", `${cfg.baseUrl}/boxingangel/image/`, cfg.flags.showTutorial, 0, 0, 0, 0, 0, cfg.flags.isNPC, cfg.flags.isStory, cfg.flags.isPVP, 0, 0]),
   );
   return [header, ...lines].join(CRLF) + CRLF;
 }
