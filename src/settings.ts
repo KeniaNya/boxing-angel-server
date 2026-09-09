@@ -79,11 +79,14 @@ export function bundleDatabaseList(): string {
  */
 export function settingsZip(cfg: SettingsConfig, overrideTables: { name: string; data: Uint8Array }[] = []): Uint8Array<ArrayBuffer> {
   const enc = new TextEncoder();
-  return buildZip([
+  const overridden = new Set(overrideTables.map((t) => t.name));
+  // Las tablas generadas ceden ante un override del mismo nombre en tables/ (p. ej. cover_localization.txt
+  // con la traduccion inglesa de la interfaz): un zip con dos entradas iguales seria ambiguo.
+  const generated = [
     { name: "channelVersion.txt", data: enc.encode(channelVersion(cfg)) },
     { name: "cover_localization.txt", data: enc.encode(coverLocalization()) },
     { name: "network_info_base.txt", data: enc.encode(networkInfo(cfg)) },
     { name: "Android_connect_info.txt", data: enc.encode(androidConnectInfo(cfg)) },
-    ...overrideTables,
-  ]);
+  ].filter((t) => !overridden.has(t.name));
+  return buildZip([...generated, ...overrideTables]);
 }

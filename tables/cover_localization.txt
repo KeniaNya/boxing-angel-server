@@ -1,0 +1,362 @@
+key	value
+IAP_WeekItem	Same privileges as the Monthly Card pack: get ## Diamonds on purchase and add @@ days to your Monthly Card. Can be bought repeatedly; days accumulate.
+HallRoadLevelUpMax	The Gym level has reached its maximum.
+MakeBlueprint	[FF000A] The blueprint will be consumed during synthesis. The star rating and other attributes of the original blueprint will not be carried over.[-]
+TimesError	The limited number of uses could not be reached. (Not used)
+AttackPower	Attack power
+ThePower	status
+Http_1017	I cannot log in.
+Push_APIsFullSub	Big brother, please come home soon. Energy fully recovered!
+Activity_NowAmount	Current quantity
+Activity_NowProgress	Current progress
+ActivityItemAcc	Collect ## @@ in total to receive a gift
+ActivityItemExchange	Collect ## @@ to exchange
+ActivityExchangeNeedItemOne	Collectible items (one-time only)
+ActivityExchangeNeedItemMany	Collectible items (exchange for duplicates)
+SkillCell2	Second skill
+LoginSDK	UC 9Game
+Friend_Max	Number of friends:
+Friend_TodayGetAP	Receiving AP:
+Friend_LoginTime	##Login
+Friend_GiveAP	present
+Friend_HasGiveAP	It has already been given as a gift.
+Friend_InviteNote	Friend Search
+Friend_InviteError	The user does not exist.
+Friend_InviteAgain	Apply
+Friend_InviteFull	The other person has the maximum number of friends.
+Friend_Get	## You will earn AP.
+Friend_View	Friend verification
+Friend_Del	Delete friend
+Friend_AllRefused	Reject all
+Friend_Refused	rejection
+Friend_Full	Your friend list is full.
+Friend_InviteNullNote	Invite your friends!
+Friend_GoInvite	invitation
+Friend_CheckDel	Do you want to delete friend ##?
+Friend_GetAP	Receipt
+Friend_HasGetAP	Received
+Friend_GiveAll	Bulk delivery
+Friend_GetAll	Lump-sum payment
+Friend_GetAskOK	I already have a friend request.
+Friend_GetGiveK	AP gift completed.
+Friend_AcceptedOK	admit
+Friend_RefusedOK	rejection
+Friend_AskErrorSelf	Your application failed. You cannot apply to yourself.
+Friend_AskErrorFriend	Your application failed. You have already submitted an application.
+Friend_SearchError	The search could not be completed.
+LobbySpecialBattle	Special match
+StoreBuyOK	Purchase successful
+LobbyFriend	friend
+MakerFragment	List of materials
+FragmentMaterial	Required materials
+MaybeFallBlueprint	Droppable blueprints
+Friend_MaxTodayGetAP	You have reached your receiving limit.
+Error_FilterPlayerName1	The characters you entered contain special symbols.
+Error_FilterPlayerName2	The characters you entered contain characters that cannot be used.
+DownloadRoleAudio	Downloading audio...
+Battle_Button_Title	Button operation
+Battle_Button_Description	Tap to jab, tap one button to dodge, and press both sides to guard.
+Battle_Slide_Title	Swipe
+Battle_Slide_Description	Slide to the side to activate a hook, and slide upwards to activate an uppercut.
+VIP_Title	Monthly Card Privileges
+VIP_Info	Besides its privileges, buying the Monthly Card grants ## Diamonds immediately!
+VIP_Mission1	Get ## Diamonds every day
+VIP_Mission2	Get ## Skip Ticket(s) every day
+VIP_BuyAP	Energy purchases per day increased from ## to @@
+VIP_BuyTP	Training Point purchases per day increased from ## to @@
+VIP_MaxTP	Max Training Points increased from ## to @@
+VIP_ResetElite	Unlocks Elite stage reset, ## time(s) per day
+VIP_ChangeCoin	Gold conversion uses per day increased from ## to @@
+VIP_UnlockSkill2	Once the skill system opens, the [c]second[-] skill is unlocked immediately
+Attribute_Jab	Attack speed increases, and the opponent's durability decreases continuously.
+Attribute_Hook	It can block other attacks.
+Attribute_Upper	You can break through the defenses of an opponent whose consciousness is clouded.
+Attribute_Spirit	If the value is high, you won't faint easily.
+Attribute_Vigor	HP increase
+VolumeSetting	Volume settings
+VolumeMusic	BGM volume
+VolumeSound	SE volume
+VolumeRoleAudio	VOICE volume
+ShowStory	Show story
+EquipToFragment	This will convert your equipment into fragments.
+DropAdd	Additional drops
+DropAddValue	##@@ items were obtained.
+Evaluation_NoWay	Do not show this again.
+Evaluation_Tucao	？003
+Evaluation_Move	Move to evaluate
+AskLoadingText	The download size is approximately ##MB. Wi-Fi is recommended.
+AskSoundLoadingText	The download size is approximately ##MB.
+AddTraining	We will increase your enhancement points by ## points.
+PlusBuff_Buff	Grant
+PlusBuff_Clear	Reset
+PlusBuff_Item	Adds random attribute [-] [FFC800]##.
+PlusBuff_CoinGeneral	Game money awarded: Random [FFC800] 1 to 30 points [-]
+PlusBuff_CoinVirtual	Diamond reward: Random [FFC800] 20-40 points [-]
+PlusBuff_CoinNotEnough	Insufficient funds
+PlusBuff_Crit	critical
+PlusBuff_Lv	level
+PlusBuff_Damage	damage
+PlusBuff_Blood	HP
+PlusBuff_Reply	recovery
+PlusBuff_Addition	bonus
+PlusBuff_Speed	speed
+PlusBuff_Jab	jab
+PlusBuff_Hook	hook
+PlusBuff_Upper	upper
+PlusBuff_Parameter	Enhancement
+PlusBuff_Information	Granted information
+PlusBuff_SelectNull	Please select the parts you wish to add.
+PlusBuff_SelectAmount	Insufficient number of parts provided
+PlusBuff_AmountLimit	The maximum number of times you can receive this has been reached.
+PlusBuff_Enter	confirmation
+PlusBuff_Canel	cancel
+PlusBuff_CheckContent	Do you want to consume ## and add \n?
+PlusBuff_Result	Grant result
+PlusBuff_EquipInfoNull	There is no way to equip the documents.
+PlusBuff_EquipNotOwn	This equipment is not available.
+PlusBuff_SlotCountZero	Currently, there is no way to add a demon.
+PlusBuff_CheckClear	[2BE239]##[-] Do you want to confirm clearing the top and adding demons? \n[EEEA35](After clearing, the top of the equipment will have demons added and everything will disappear!\nThere is no way to get compensation for excess!)[-]
+LobbyWish	recycling
+Wish_ActiveDuring	Event period
+Wish_ActiveExplanation	Event Description
+Wish_ContentDetail	Detailed information
+Wish_Consumables	Consumables
+Wish_Lottery	Currency exchange
+Wish_Date	MM/dd
+Wish_Close	Event not yet started
+ChapterCondition	Victory conditions
+ChapterResult	Match results
+ChapterConditionLimit	cannot
+ChapterConditionFight	Extermination
+ChapterConditionType_0	[FFFFFF] Defeat your opponent within the round [-]
+ChapterConditionType_1	[FFFFFF]Cumulative damage dealt to opponent[FFC800]##[-] or more to win[-]
+ChapterConditionType_2	[FFFFFF]Reach a dodge success rate of [FFC800]##%[-] by the end of the fight[-]
+ChapterConditionType_3	[FFFFFF] Win the match with [FFC800]##[-] times or less [-]
+ChapterConditionType_4	[FFFFFF] Attack hit rate [FFC800] ##% [-] or higher to win the match [-]
+ChapterConditionType_5	[FFFFFF] Win the match within [FFC800]##[-] seconds [-]
+ChapterConditionType_6	[FFFFFF] Knock down your opponent [FFC800]## times [-] or more during the match [-]
+ChapterConditionType_7	[FFFFFF][FFC800]##[-] Win by dealing more than 1 point of damage in a single hit[-]
+ChapterConditionType_8	[FFFFFF] Number of times stunned [FFC800]##[-] times or less to win [-]
+ChapterConditionType_9	[FFFFFF]Win by knocking out your opponent [FFC800]## times[-] or more[-]
+ChapterResultType_0	[FFFFFF][E9FB43]'s ##th round [-] will defeat the opponent [-]
+ChapterResultType_1	[FFFFFF]Cumulative damage dealt to opponent[FFC800]##[-] or more to win[-]
+ChapterResultType_2	[FFFFFF]Dodge success rate reached [E9FB43]##%[-][-]
+ChapterResultType_3	[FFFFFF] Win the match with [E9FB43]##[-] times or less [-]
+ChapterResultType_4	[FFFFFF] Attack hit rate [FFC800] ##% [-] or higher to win the match [-]
+ChapterResultType_5	[FFFFFF]Win the match in under [E9FB43]##[-] seconds[-]
+ChapterResultType_6	[FFFFFF] Knock down your opponent [FFC800]## times [-] or more during the match [-]
+ChapterResultType_7	[FFFFFF][E9FB43]##[-] points or more in one hit to win[-]
+ChapterResultType_8	[FFFFFF] Number of times stunned [E9FB43]##[-] times or less to win [-]
+ChapterResultType_9	[FFFFFF]Win by knocking out your opponent [FFC800]## times[-] or more[-]
+PersonalPrivacy	Personal Information Collection Agreement
+Tutorial_Battle_IsDream1	It hurts! My dream...
+Tutorial_Battle_IsDream2	Oh no! It's too late! Today's the rookie's debut match! I need to get ready quickly!
+Tutorial_TrainBase_TrainExplain	Selecting an enhancement item will allow you to check its attribute effect. Tap again to close the screen!
+Tutorial_Lottery_2	There are three types of gacha: [00FF00]General Gacha[-], [00FF00]Diamond Gacha[-], and [00FF00]Special Gacha[-].
+Tutorial_PVP_0	Congratulations on leveling up!! You can now participate in challenge matches!!
+Tutorial_PVP_3	First, tap the player you want to participate!!
+Tutorial_PVP_4	Next, let's take a look at the details of the strategy menu!!
+Tutorial_PVP_5	Here are some possible combinations of attack strategies!!
+Tutorial_PVP_8	First, I'll choose the attack mode!!
+Tutorial_PVP_9	Choose the jab as your attack method!
+Tutorial_PVP_10	That completes the strategy setup!!
+Tutorial_PVP_11	Tap here to complete player registration!!
+Tutorial_PVP_12	Let's have a match right away!!
+Tutorial_PVP_13	You can choose your opponent from three options!! This time, I'll go with this one!!
+Tutorial_EquipGloves_ClickEquipInfo	Let's combine the fragments we've obtained and attach the parts to our equipment!!
+Tutorial_EquipGloves_ChooseSlot	First, let's combine the fragments!! Tap the parts that say "Combineable"
+Tutorial_EquipGloves_CheckCombine	Tap the combine button!!
+Tutorial_EquipGloves_CheckEnter	Once you've decided on the quantity to combine, tap "Confirm".
+Tutorial_EquipGloves_Checknsert	Let's attach the parts! Tap on Equipment.
+Tutorial_EquipGloves_TellQualityUp	[00FF00]Once you attach six [-] parts, you'll be able to enhance your equipment. Let's collect lots of fragments!
+Tutorial_BoxingCombo_Introductionl	Your gym's reputation has gone up!! Now, let's talk about attacks!!
+Tutorial_BoxingCombo_ClickFight	Battle Selection
+Tutorial_BoxingCombo_ClcikMapPos	Choose this opponent and let's have a match!
+Tutorial_BoxingCombo_ClcikMapInfo	Are you ready?! Let's give it a try!
+Tutorial_BoxingCombo_ClickBattle	Consecutive attacks are powerful, but they can also be blocked by your opponent!!
+Tutorial_BoxingCombo_Introduction2	It activates when your opponent is unconscious! Don't miss this chance!!
+Tutorial_BoxingCombo_Do	Jab (tap), jab (tap), hook (flick)
+Tutorial_BoxingCombo_Miss	Failed!! Let's try again!!
+Tutorial_BoxingCombo_Success	Wow, that was unexpected! Impressive!
+Tutorial_Button_ClickNeed	[00FF00] Press and hold the [-] icon to display skill information.
+Tutorial_Button_ShowNeed	The activation conditions and success rate are written there!
+Tutorial_KnowBlueprint_Introductionl1	I got the blueprints!! Let's go to the gym so I can explain them!!
+Tutorial_KnowBlueprint_ClickBack	Please tap "Back".
+Tutorial_KnowBlueprint_ClickHallroad	Tap on the gym.
+Tutorial_KnowBlueprint_ClickBikini	The first thing you need to get is a blueprint for clothing, so please choose some clothes.
+Tutorial_KnowBlueprint_Introductionl2	Tap the blueprint!!
+Tutorial_KnowBlueprint_EquipBikini	Tap on the new clothes.
+Tutorial_KnowBlueprint_ClickEquipInfo	Select what to display
+Tutorial_KnowBlueprint_Know1	The items displayed on the left are the materials needed to make the clothing.
+Tutorial_KnowBlueprint_Know2	Each piece of equipment has different characteristics. Adjust your equipment based on your opponent's characteristics!
+Tutorial_KnowBlueprint_ClickMaterial	You can combine parts on this screen. Remember that!
+Tutorial_KnowBlueprint_Finish	Let's collect various blueprints!
+Tutorial_BattleAI_ClickModeOption	Win the match and achieve a 2-star rating, and you'll be able to use the AUTO function!!
+Tutorial_BattleAI_ClickModeType	Let's get started with the setup!! Select a type.
+Tutorial_BattleAI_ClickFistOption	Choose the type of attack.
+Tutorial_BattleAI_ClickFistType	Tap the upper
+Tutorial_BattleAI_ClickAutoFight	You can switch the AUTO function even while fighting!!
+Tutorial_KnowElite_Introductionl1	Now you can finally take on the elite stage!
+Tutorial_KnowElite_Introductionl2	Equipment fragments can only be dropped in Elite Stages. Elite Stages have a limited number of attempts, so don't forget to challenge them every day!
+Tutorial_KnowElite_ClickMapPos	Let's start by trying Stage 1!
+Tutorial_KnowElite_Reward	You can check the contents of the drop below!
+Tutorial_KnowElite_ClickFight	You'll receive achievement rewards for clearing certain stages! Don't forget to claim them!
+Tutorial_ChangeRole_ToBoxHall	Tap on the gym.
+Tutorial_ChangeRole_ClickCharacter	Let's take a look at the other characters right away!!
+Tutorial_ChangeRole_ClickRole	Each character has different weaknesses!! Check them all out!!
+Tutorial_ExchangeCoin_ClickExchangeCoin	Tap the "+" here!
+Tutorial_ExchangeCoin_ClickInfo	Money can be exchanged for diamonds, however, there is a limit to the number of times you can exchange them.
+Tutorial_ExchangeCoin_ClickChange	A probability bonus is triggered when you exchange items!! You can win more money!!
+Tutorial_Friend_ToFriend	Let's move on to managing friends!
+Tutorial_Friend_ClickFriend	You can send and receive AP from your friends list. There is a daily limit of 50 times.
+Tutorial_Friend_ClickRequest	You can check for friend requests here. The friend limit increases by one for every two levels you reach.
+Tutorial_Friend_ClickInvite	You can search for friend numbers and send friend requests here!
+Tutorial_Friend_ClickInviteList	Let's send a friend request!
+Tutorial_MissionDaily_ClickActivity	You can get rewards by completing daily events and quests!
+Tutorial_MissionDaily_ClickMission	Tap on Daily Events.
+Tutorial_MissionDaily_GetGloves	Complete the daily events to become stronger!!
+Tutorial_OutSide_ToOutSide	Congratulations on your steady progress!! You'll be able to challenge yourself in international matches!!
+Tutorial_OutSide_ClickOutSide	Off-site matches
+Tutorial_OutSide_ClickOption	The matches held vary depending on the day of the week!! Prize money matches are held on Mondays, Wednesdays, and Fridays, exhibition matches on Tuesdays, Thursdays, and Saturdays, and both are held on Sundays, so you should definitely give it a try!!
+Tutorial_OutSide_ClickLevel	You have two attempts!! Let's start here!!
+Tutorial_OutSide_ClickMapInfo	Let's get started with the match!! Good luck!!
+Tutorial_OutSide_ClickFight	Let the fight begin!
+Tutorial_Skill2_Introductionl	Everything's going well!! Everything's going well!! This is the result of all our hard work so far!!
+Tutorial_Skill2_ToBoxHall	I'm going to learn my second skill right away!!
+Tutorial_Skill2_ClickTrain	The second skill starts here!!
+Tutorial_Skill2_ChooseSkill	First, this!!\nThis will activate your second skill!!
+Tutorial_Special_ToSpecial	You've made it this far, congratulations!! Let's go to the special match!!
+Tutorial_Special_ClickSpecial	Please select a special match!
+Tutorial_Special_ClickOption	The matches held vary by day of the week!! Mondays and Thursdays are [00FF00]jab-only[-], Tuesdays and Fridays are [00FF00]hook-only[-], Wednesdays and Saturdays are [00FF00]uppercut-only[-], and Sundays are [00FF00]all[-]!! Come and participate every day!!
+Tutorial_Special_ClickLevel	Let's start here!! Now!! The match begins!!
+Tutorial_Special_ClickMapInfo	There are bonuses you can't get anywhere else, so you absolutely, definitely have to try!!
+Tutorial_Special_ClickFight	The fight begins!
+Tutorial_Store_ClickActivity	Yay, you leveled up!! The shop is now open!!
+Tutorial_Store_ClickDaily	You can exchange items here!! Come visit us often!!
+Tutorial_Store_ClickTime	The displayed items can be exchanged until the next update!!
+Tutorial_Store_ClickRefresh	You can refresh it using diamonds, so don't give up just because there's nothing you want!!
+Tutorial_Supply_Physician_ToBoxHall	Your fame level is steadily increasing!!
+Tutorial_Supply_Physician_ClickLogistics	Athletic ability affects the duration of unconsciousness!!
+Tutorial_Supply_Physician_ClickPhysician	Athletic can shorten the time you're knocked out. Equip it as soon as you get it!!
+Tutorial_Supply_Physician_ClickList	The time it takes to faint varies depending on the grade!! Equip yourself with high-grade athletic gear!!
+Tutorial_Supply_Physician_ClickTakeOff	You can also enhance your athletic abilities! Get them and enhance them!!
+Tutorial_Supply_Trainer_ToBoxHall	Your fame level is steadily increasing!!
+Tutorial_Supply_Trainer_ClickLogistics	For the fighters, he's an important figure who can help the gym gain prestige!!
+Tutorial_Supply_Trainer_ClickTrainer	Once you get a trainer, equip it as soon as possible!!
+Tutorial_Supply_Trainer_ClickList	The amount of fame you gain varies depending on the trainer's grade, so it's best to equip a high-grade trainer as soon as possible!!
+Tutorial_Supply_Trainer_ClickTakeOff	If you own a trainer, you can equip it by tapping here!!
+Tutorial_BattleFree1_ClickShowInfo	You can check both statuses here.
+Tutorial_BattleFree1_ClickHideInfo	Tapping again will close the screen.
+Tutorial_BattleFree1_ClickIcon	You can check your opponent's weaknesses by long-pressing the icon!!
+Tutorial_BattleFree1_ShowIcon	Please remember this!
+Tutorial_BattleFree1_ClickFight	Now you know its weak point!! Aim for that weak point and attack!!
+CodeRedemption_1029	Failure to receive the relevant serial code.
+CodeRedemption_1030	error
+GetEliteBattleList_1019	Insufficient level
+ReportEliteBattle_1019	The progress is not accurate.
+GetFriend_1006	Access denied
+GetFriendInfo_1003	error
+GetFriendInfo_1005	I don't have this friend.
+GetFriendInfo_1006	Access denied
+GetFriendInfo_1019	Insufficient level
+GetAskAddFriend_1006	Access denied
+ResponsesAddFriend_1002	error
+ResponsesAddFriend_1003	error
+ResponsesAddFriend_1006	Access denied
+ResponsesAddFriend_1012	I have lots of friends.
+ResponsesAddFriend_1028	The other person has a lot of friends.
+DeleteFriend_1002	error
+DeleteFriend_1003	error
+DeleteFriend_1006	Access denied
+AddFriend_1002	error
+AddFriend_1003	error
+AddFriend_1006	Access denied
+AddFriend_1012	I have lots of friends.
+AddFriend_1019	Insufficient level
+AddFriend_1020	I have already submitted the application. I am waiting for a reply.
+AddFriend_1028	The number of friend requests for that user has reached its limit, so you cannot send another request.
+ReceiveFriend_1002	error
+ReceiveFriend_1003	error
+ReceiveFriend_1005	We are not friends.
+ReceiveFriend_1006	Access denied
+ReceiveFriend_1012	I received it today.
+GiveFriend_1002	error
+GiveFriend_1003	error
+GiveFriend_1005	I don't have this friend.
+GiveFriend_1006	Access denied
+GiveFriend_1012	I have already received today's delivery.
+FindPlayer_1006	Access denied
+RandomPlayer_1006	Access denied
+getItemActivityReward_1	We are short on stock.
+getItemActivityReward_-1	No items found.
+getItemActivityReward_-2	There are no events.
+getItemActivityReward_-3	Event ended
+getItemActivityReward_-4	Received
+getItemActivityReward_-5	Currency exchange function not available
+addBuff_1002	The parameter could not be found.
+addBuff_1003	The parameters are incorrect.
+addBuff_1012	You can add the number of times you've played a demon and it will already be full.
+addBuff_1015	Not logged in
+addBuff_1017	I don't have this equipment.
+addBuff_1019	The grades do not match.
+clearBuff_1005	The player does not have this information.
+clearBuff_1015	Not connected
+clearBuff_1017	The system does not have any documentation.
+GachaRareItemOne	Extremely rare
+GachaRareItemTen	Extremely rare
+GachaOtherItem	There is a chance to receive
+GachaNormal	money
+GachaVirtual	Diamond
+GachaChoice	Special Selection
+GachaCosplay	cosplay
+GachaEgg	Gacha
+GachaGetFree	Free selection chance!!
+GachaDetial	Gacha details
+GachaSixFree	You can choose one item of your choice every six turns.
+GachaDetialTitle2	Free choice content
+RankHaveItemNumber	Number of items owned
+RankFrontThirtyPlace	FRONT30
+RankUserPlace	Current ranking
+RankRewardListTitle	Bonus ranking
+RankUserRank	Current ranking
+RankUserReward	Current bonus
+RankTotalPlayer	Number of participants
+RankInfoTitle	Event details
+RankInfoText	I collected the most items by participating in the event.
+RankEndTime	Remaining time
+RankNonData	Data not found
+RankNonRank	Not ranked
+RankTopRank	Top-ranked players
+RankReNewRank	The rankings are updated every hour.
+RankRoleView	Intelligence Expansion
+RankOutTime	Expired
+RankNonListData	There are no ongoing rankings.
+RankTime_0	## Day @@ Hour $$ Minute
+Fortifications	Not yet implemented
+AsnBattleCount	Number of enemies defeated:
+AsnBattleRound	Number of rounds
+AsnBattleStage	## Battle
+AsnHeroRank	Ranking
+AsnRankLabel_1	Breakthrough ranking
+AsnRankLabel_2	Star rating ranking
+AsnRankLabel_3	Ranking of ferocity
+AsnRankLabel_4	Rising Star Ranking
+AsnRankLabel_5	Killer Ranking
+AsnRankLabel_6	Winning Ranking
+AsnRankLabelDescript_1	Stage cleared
+AsnRankLabelDescript_2	Star rating ranking
+AsnRankLabelDescript_3	Cumulative damage
+AsnRankLabelDescript_4	Conquest Completion Level
+AsnRankLabelDescript_5	One-hit damage
+AsnRankLabelDescript_6	Conquest win rate
+AsnRankItemDescript_1	Number of stages cleared: ## floors
+AsnRankItemDescript_2	All stars ## stars
+AsnRankItemDescript_3	Total damage ##
+AsnRankItemDescript_4	Clear Level ##
+AsnRankItemDescript_5	One-hit damage ##
+AsnRankItemDescript_6	Clear win rate: ##%
+AsnRankUsedEquip	Equipment used
+AsnRankUsedSkill	Use skills
+AsnBattleCount1	people
+startWishPoolGacha_1	There are no events.
+startWishPoolGacha_2	Event Error
