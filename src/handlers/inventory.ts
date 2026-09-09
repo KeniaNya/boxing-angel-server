@@ -475,12 +475,13 @@ export const handlers: Record<string, PlayerHandler> = {
   /** Usa amount unidades del objeto id segun item_info efecto: exp de gimnasio/rol, oro, diamantes, AP, entrenamiento,
    *  VIP (dias), bolsa regalo o plano (materiales + oro -> equipo; si ya se posee, fragmentos via change_reward).
    *  Responde {res, id, amount, coin[], ap, ap_time, player_lv, player_exp, ...} (CSUIItemInfo / CSMakerFragment). */
-  UseItemC2S({ p, params }) {
+  UseItemC2S({ p, params, log }) {
     const id = str(params.id), amount = int(params.amount, 1), rid = str(params.rid);
     if (!id) return [reply("UseItemS2C", { res: R.NO_DATA })];
     const it = itemInfo(id);
     if (!it || amount < 1) return [reply("UseItemS2C", { res: R.WRONG_DATA })];
-    if (itemCount(p, id) < amount) return [reply("UseItemS2C", { res: R.NOT_FOUND })];
+    const tutorialBlueprint = it.effect === EFFECT.Blueprint && !(p.teaching_flag & (1 << 19)); // ver rama Blueprint
+    if (itemCount(p, id) < amount && !tutorialBlueprint) return [reply("UseItemS2C", { res: R.NOT_FOUND })];
     refreshAp(p);
     const base = () => ({ res: R.OK, id, amount, coin: p.coin, ap: p.ap, ap_time: p.ap_time, player_lv: p.lv, player_exp: p.exp });
     const total = it.value * amount;
@@ -539,6 +540,18 @@ export const handlers: Record<string, PlayerHandler> = {
         const need: Record<string, number> = {};
         for (const m of bp.slot) need[m] = (need[m] ?? 0) + 1;
         need[id] = Math.max(need[id] ?? 0, 1);
+        // Tutorial "KnowBlueprint" (TutorialType 20): el cliente da por hechos los materiales del primer plano
+        // (los combates Dream los aplica en local) y no maneja un error aqui (se queda cargando). Mientras ese
+        // tutorial no este marcado, se completan los materiales y el oro que falten.
+        if (tutorialBlueprint) {
+          for (const [m, n] of Object.entries(need)) {
+            if (isEquipId(m)) {
+              if (!findEquip(p, m)) createEquip(p, m);
+            } else if (itemCount(p, m) < n) addItem(p, m, n - itemCount(p, m));
+          }
+          if (coin(p, "gcoin") < bp.gcoin) addCoin(p, "gcoin", bp.gcoin - coin(p, "gcoin"));
+          log("UseItem: tutorial de planos, materiales completados para", id);
+        }
         for (const [m, n] of Object.entries(need)) {
           const ok = isEquipId(m) ? (n === 1 && !!findEquip(p, m)) : itemCount(p, m) >= n;
           if (!ok) return [reply("UseItemS2C", { res: R.NOT_ENOUGH })];

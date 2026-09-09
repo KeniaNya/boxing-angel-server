@@ -42,6 +42,7 @@ type BattleState = {
   eliteNpc: Record<string, { hp: number; anger: number }>; // hp/ira restante del rival por indice
   lastPvE: { ch_id: string; result: number; at: number } | null;
   teachLog: { main: number; deputy: number; at: number }[];
+  dreamDone?: string[]; // capitulos "Dream" (tutorial) ya premiados: el cliente los resuelve en local y solo manda ReportPvEResult
 };
 function state(p: Player): BattleState {
   const st = ext<BattleState>(p, "battle", () => ({
@@ -464,6 +465,18 @@ export const handlers: Record<string, PlayerHandler> = {
     const result = intParam(params, "result") ?? 0;
     st.lastPvE = { ch_id: chId, result, at: Date.now() };
     if (result !== 1 && st.playing === chId) st.playing = null;
+    // Capitulos "Dream" (combates guiados del tutorial): el cliente aplica sus recompensas en local sin
+    // PlayChapter/ReportChapter, asi que se conceden aqui (una vez por capitulo) para que persistan.
+    const c = chapter(chId);
+    if (result === 1 && c && c.type === CH.DREAM) {
+      st.dreamDone ??= [];
+      if (!st.dreamDone.includes(c.idStr)) {
+        st.dreamDone.push(c.idStr);
+        const rewards = rollRewards(c, true);
+        const notices = grantWithNotices(p, rewards);
+        return [s2c("ReportPvEResultS2C", { res: 0 }), ...notices, notice.coin(p), notice.player(p)];
+      }
+    }
     return [s2c("ReportPvEResultS2C", { res: 0 })];
   },
 

@@ -152,3 +152,29 @@ test("UseItem: pocion de AP suma AP y responde con el estado", async () => {
   expect(itemCount(p, id)).toBe(had - 1);
   expect(res(await send("UseItemC2S", { id: "0201039", amount: 1, rid: "" }))).toBe(1003); // pieza: no usable
 });
+
+test("tutorial de planos: fabrica el primer plano aunque falten materiales y oro", async () => {
+  const { p, send } = await testSession();
+  p.teaching_flag = 0;
+  p.items = {};
+  p.coin = [0, 0, 0, 0];
+  const out = await send("UseItemC2S", { id: "5002035", amount: 1, rid: null });
+  expect(out[0].paramObject.res).toBe(0);
+  expect(out[0].paramObject.reward).toBe("0102035");
+  expect(p.equips.some((e) => e.id === "0102035")).toBe(true);
+  // con el tutorial marcado, sin materiales -> error
+  p.teaching_flag = 1 << 19;
+  const again = await send("UseItemC2S", { id: "5002035", amount: 1, rid: null });
+  expect(again[0].paramObject.res).not.toBe(0);
+});
+
+test("combate Dream (tutorial): ReportPvEResult concede las recompensas del capitulo una sola vez", async () => {
+  const { p, send } = await testSession();
+  const gold = p.coin[0];
+  const out = await send("ReportPvEResultC2S", { ch_id: "3201090", result: 1, prop: {}, prop1: {} });
+  expect(out[0].paramObject.res).toBe(0);
+  expect(p.coin[0]).toBe(gold + 1500);
+  expect(p.items["0201026"]).toBeGreaterThanOrEqual(2);
+  await send("ReportPvEResultC2S", { ch_id: "3201090", result: 1, prop: {}, prop1: {} });
+  expect(p.coin[0]).toBe(gold + 1500);
+});
