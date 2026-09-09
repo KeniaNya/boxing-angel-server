@@ -12,9 +12,15 @@ export type RewardItem = { id: string; amount: number };
 export const COIN_INDEX: Record<string, number> = { gcoin: 0, vcoin: 1, pcoin: 2, ecoin: 3 };
 export const isCoin = (id: string) => id in COIN_INDEX;
 
-/** Frame S2C con whatTime (todas las respuestas lo llevan). */
+/** Hora de servidor en el formato del cliente ("yyyy-MM-dd HH:mm:ss.fff", CSDataCenter.GetPacketTime; se parsea con Convert.ToDateTime). */
+export function packetTime(d = new Date()): string {
+  const p = (n: number, w = 2) => String(n).padStart(w, "0");
+  return `${d.getUTCFullYear()}-${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}:${p(d.getUTCSeconds())}.${p(d.getUTCMilliseconds(), 3)}`;
+}
+
+/** Frame S2C con whatTime (todas las respuestas lo llevan; un valor no parseable rompe el procesado del lote). */
 export function s2c(name: string, obj: Record<string, unknown>): Frame {
-  return { methodName: name, paramObject: { ...obj, whatTime: String(Date.now()) } };
+  return { methodName: name, paramObject: { ...obj, whatTime: packetTime() } };
 }
 
 // ---- lv_info: 0 nivel, 1 exp necesaria (gimnasio/jugador), 2 AP maximo, 3 AP regalo al subir, 4 exp necesaria (rol), 5 desbloqueos (JSON)
