@@ -10,7 +10,7 @@ export function publicHtml(baseUrl: string): string {
   const obb = files.find((f) => f.name.endsWith(".obb"));
   const c = config();
   const row = (f: FileInfo, label: string) =>
-    `<a class="dl" href="/download/${encodeURIComponent(f.name)}"><b>${escapeHtml(label)}</b><span>${escapeHtml(f.name)} · ${fmtSize(f.size)}</span>${f.description ? `<em>${escapeHtml(f.description)}</em>` : ""}<code>SHA-256 ${f.sha256}</code></a>`;
+    `<a class="dl" href="/download/${encodeURIComponent(f.name)}?v=${(f.sha256 ?? "").slice(0, 8)}"><b>${escapeHtml(label)}</b><span>${escapeHtml(f.name)} · ${fmtSize(f.size)}</span>${f.description ? `<em>${escapeHtml(f.description)}</em>` : ""}<code>SHA-256 ${f.sha256}</code></a>`;
   return `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Boxing Angel · servidor comunitario</title>
 <style>

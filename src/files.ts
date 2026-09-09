@@ -114,7 +114,10 @@ export function serveFile(name: string, req: Request): Response {
     "content-type": CONTENT_TYPES[ext] ?? "application/octet-stream",
     "accept-ranges": "bytes",
     "content-disposition": `attachment; filename="${name}"`,
-    "cache-control": "public, max-age=3600",
+    // Sin cache intermedia: Cloudflare cacheo una version corrupta en la primera prueba y ademas
+    // ignora Range en objetos cacheados. La pagina enlaza con ?v=<sha8> para que la URL cambie con el contenido.
+    "cache-control": "no-store",
+    etag: `"${meta()[name]?.sha256 ?? size}"`,
   };
   const range = req.headers.get("range");
   const m = range && /^bytes=(\d*)-(\d*)$/.exec(range.trim());
