@@ -9,7 +9,7 @@ const fmtSize = (n: number) => (n >= 1 << 20 ? `${(n / (1 << 20)).toFixed(1)} MB
 export type Lang = "en" | "es" | "ja";
 type Strings = {
   title: string; intro: string; online: string; maintenance: string;
-  downloads: string; apk: string; obb: string; apkMissing: string; obbMissing: string;
+  downloads: string; apk: string; apk64: string; apk64Note: string; obb: string; apkMissing: string; obbMissing: string;
   install: string; requirements: string; step1: string; step2: string; step3: string;
   manualSummary: string; manualText: string;
   updates: string; news: string; langNote: string; notice: string; noticeText: string;
@@ -21,7 +21,7 @@ const T: Record<Lang, Strings> = {
     title: "Boxing Angel · community server",
     intro: "Unofficial, fan-run server for <i>Boxing Angel</i> (Mono Play, 2019), whose official servers shut down in July 2019. Status:",
     online: "online", maintenance: "under maintenance",
-    downloads: "Downloads", apk: "Game (APK)", obb: "Game data (OBB) · only for manual copy",
+    downloads: "Downloads", apk: "Game (APK) · recommended", apk64: "Game (APK) · 64-bit build, beta", apk64Note: "Only if the recommended APK will not install on your phone (64-bit-only devices such as Pixel 7 or newer and Galaxy S24 or newer). Rebuilt on a modern engine, still being polished. Everything is inside the APK: no OBB needed. It installs over the other APK and keeps your account.", obb: "Game data (OBB) · only for manual copy",
     apkMissing: "The APK has not been published yet.", obbMissing: "The OBB file has not been published yet.",
     install: "Installing on Android",
     requirements: "Needs an Android device that can run 32-bit apps (armeabi-v7a): Android 5 to 14 work, and so do most Android 15/16 phones. Devices that only support 64-bit apps (some recent Pixels) cannot install it.",
@@ -41,7 +41,7 @@ const T: Record<Lang, Strings> = {
     title: "Boxing Angel · servidor comunitario",
     intro: "Servidor no oficial mantenido por fans para <i>Boxing Angel</i> (Mono Play, 2019), cuyos servidores oficiales cerraron en julio de 2019. Estado:",
     online: "en línea", maintenance: "en mantenimiento",
-    downloads: "Descargas", apk: "Juego (APK)", obb: "Datos del juego (OBB) · solo para copia manual",
+    downloads: "Descargas", apk: "Juego (APK) · recomendado", apk64: "Juego (APK) · versión de 64 bits, beta", apk64Note: "Solo si el APK recomendado no se instala en tu teléfono (equipos que únicamente ejecutan apps de 64 bits, como Pixel 7 o posterior y Galaxy S24 o posterior). Reconstruido sobre un motor moderno, todavía en pulido. Todo va dentro del APK: no necesita OBB. Se instala encima del otro APK y conserva tu cuenta.", obb: "Datos del juego (OBB) · solo para copia manual",
     apkMissing: "El APK aún no se ha publicado.", obbMissing: "El archivo OBB aún no se ha publicado.",
     install: "Instalación en Android",
     requirements: "Requiere un Android que ejecute apps de 32 bits (armeabi-v7a): de Android 5 a 14 funciona, y también la mayoría de Android 15/16. Los teléfonos que solo admiten 64 bits (algunos Pixel recientes) no pueden instalarlo.",
@@ -61,7 +61,7 @@ const T: Record<Lang, Strings> = {
     title: "Boxing Angel · コミュニティサーバー",
     intro: "2019年7月に公式サーバーが終了した<i>ボクシングエンジェル</i>（Mono Play、2019年）を、ファンが非公式に運営しているサーバーです。状態：",
     online: "稼働中", maintenance: "メンテナンス中",
-    downloads: "ダウンロード", apk: "ゲーム本体（APK）", obb: "ゲームデータ（OBB）・手動コピー用",
+    downloads: "ダウンロード", apk: "ゲーム本体（APK）・推奨", apk64: "ゲーム本体（APK）・64ビット版、ベータ", apk64Note: "推奨APKがインストールできない端末（Pixel 7以降やGalaxy S24以降など64ビット専用機）のみ。新しいエンジンで再構築した、調整中のビルドです。データはすべてAPKに含まれ、OBBは不要です。もう一方のAPKの上に上書きインストールでき、アカウントは引き継がれます。", obb: "ゲームデータ（OBB）・手動コピー用",
     apkMissing: "APKはまだ公開されていません。", obbMissing: "OBBファイルはまだ公開されていません。",
     install: "Androidへのインストール",
     requirements: "32ビットアプリ（armeabi-v7a）を実行できるAndroid端末が必要です。Android 5〜14で動作し、Android 15/16の多くの端末でも動作します。64ビットアプリしか動かない端末（一部の新しいPixelなど）にはインストールできません。",
@@ -88,7 +88,8 @@ export function pickLang(param: string | null, _acceptLanguage: string | null): 
 export function publicHtml(baseUrl: string, lang: Lang = "en"): string {
   const t = T[lang];
   const files = listFiles().filter((f) => f.sha256);
-  const apk = files.find((f) => f.name.endsWith(".apk"));
+  const apk64 = files.find((f) => f.name.endsWith(".apk") && /64/.test(f.name));
+  const apk = files.find((f) => f.name.endsWith(".apk") && f !== apk64);
   const obb = files.find((f) => f.name.endsWith(".obb"));
   const c = config();
   const obbName = obb?.name ?? "main.2019042915.th.in.monogame.boxingangel.obb";
@@ -119,7 +120,8 @@ a{color:#ff9ad0}footer{margin-top:40px;color:#7f6fa8;font-size:12px}
 <h2>${escapeHtml(t.downloads)}</h2>
 ${apk ? row(apk, t.apk) : `<p class="warn">${escapeHtml(t.apkMissing)}</p>`}
 ${obb ? row(obb, t.obb) : `<p class="warn">${escapeHtml(t.obbMissing)}</p>`}
-${files.filter((f) => f !== apk && f !== obb).map((f) => row(f, f.name)).join("")}
+${apk64 ? row(apk64, t.apk64) + `<p class="note">${escapeHtml(t.apk64Note)}</p>` : ""}
+${files.filter((f) => f !== apk && f !== apk64 && f !== obb).map((f) => row(f, f.name)).join("")}
 
 <h2>${escapeHtml(t.install)}</h2>
 <p class="muted">${escapeHtml(t.requirements)}</p>
