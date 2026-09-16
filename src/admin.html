@@ -203,6 +203,17 @@
     <div><label>Oro base por combate de élite ganado</label><input type="number" id="eco-elite" min="0"></div>
     <label style="align-self:end"><input type="checkbox" id="eco-pvp"> Recompensa diaria por puesto PvP</label>
   </div>
+  <h3>Diamantes por jugar (des-gachificar: comprar personajes jugando la historia)</h3>
+  <div class="row">
+    <div><label>Precio de cada personaje en diamantes (0 = el original, 3000; el juego lo muestra al reiniciar)</label><input type="number" id="eco-roleprice" min="0"></div>
+    <div><label>Diamantes la primera vez que se supera un capítulo</label><input type="number" id="eco-dfirst" min="0"></div>
+    <div><label>Diamantes por cada victoria repetida en un capítulo</label><input type="number" id="eco-dreplay" min="0"></div>
+  </div>
+  <div class="row">
+    <div><label>Diamantes por combate de élite ganado</label><input type="number" id="eco-delite" min="0"></div>
+    <div><label>Diamantes por victoria PvP (escalera y en vivo)</label><input type="number" id="eco-dpvp" min="0"></div>
+    <div><label>Diamantes por cada nivel de gimnasio</label><input type="number" id="eco-dlevel" min="0"></div>
+  </div>
   <h3>Bolsas regalo y firma diaria</h3>
   <div class="row">
     <div><label>Oro por bolsa de oro</label><input type="number" id="eco-bagg" min="0"></div>
@@ -387,6 +398,8 @@ function loadEconomy() {
     $('eco-g10').checked = e.gachaTenGuaranteesEquip;
     $('eco-gold').value = e.goldPerRound; $('eco-elite').value = e.eliteWinGold; $('eco-pvp').checked = e.pvpDailyRewards;
     $('eco-bagg').value = e.giftBagGold; $('eco-bagd').value = e.giftBagDiamonds;
+    $('eco-roleprice').value = e.rolePriceDiamonds; $('eco-dfirst').value = e.storyDiamondsFirstClear; $('eco-dreplay').value = e.storyDiamondsReplay;
+    $('eco-delite').value = e.eliteWinDiamonds; $('eco-dpvp').value = e.pvpWinDiamonds; $('eco-dlevel').value = e.levelUpDiamonds;
     $('eco-sg').value = e.starterGold; $('eco-sd').value = e.starterDiamonds; $('eco-sa').value = e.starterAp;
     $('eco-wm-sender').value = e.welcomeMail.sender; $('eco-wm-title').value = e.welcomeMail.title; $('eco-wm-content').value = e.welcomeMail.content;
     setPicker('eco-signin-picker', e.signinCycle); setPicker('eco-mail-picker', e.welcomeMail.annex);
@@ -397,6 +410,8 @@ function saveEconomy() {
     gachaWeights: { normal: [Number($('eco-gn0').value), Number($('eco-gn1').value)], virtual: [Number($('eco-gv0').value), Number($('eco-gv1').value)], choice: [Number($('eco-gc0').value), Number($('eco-gc1').value)] },
     gachaTenGuaranteesEquip: $('eco-g10').checked, goldPerRound: Number($('eco-gold').value), eliteWinGold: Number($('eco-elite').value), pvpDailyRewards: $('eco-pvp').checked,
     giftBagGold: Number($('eco-bagg').value), giftBagDiamonds: Number($('eco-bagd').value), signinCycle: pickerRewards('eco-signin-picker'),
+    rolePriceDiamonds: Number($('eco-roleprice').value), storyDiamondsFirstClear: Number($('eco-dfirst').value), storyDiamondsReplay: Number($('eco-dreplay').value),
+    eliteWinDiamonds: Number($('eco-delite').value), pvpWinDiamonds: Number($('eco-dpvp').value), levelUpDiamonds: Number($('eco-dlevel').value),
     starterGold: Number($('eco-sg').value), starterDiamonds: Number($('eco-sd').value), starterAp: Number($('eco-sa').value),
     welcomeMail: { sender: $('eco-wm-sender').value, title: $('eco-wm-title').value, content: $('eco-wm-content').value, annex: pickerRewards('eco-mail-picker') },
   };

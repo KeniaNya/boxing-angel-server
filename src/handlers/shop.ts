@@ -315,6 +315,9 @@ function storeCandidates(storeId: number): Candidate[] {
     for (const f of fragById.values()) if ((equipRow(f.equip)?.[31] ?? "").trim() === "eshop") out.push({ id: f.id, price: f.price, coinTypes: [3] });
   } else {
     for (const f of fragById.values()) if (f.source === "shop") out.push({ id: f.id, price: f.price, coinTypes: [0, 1] });
+    // Equipo de apoyo (logistica, 04xxxxx): en el original sus fragmentos solo caian del gacha ("gdraw"/"vdraw"); para que
+    // los huecos de equipo se puedan usar sin gacha, sus fragmentos se venden aqui por oro o diamantes (fragment_info col 4).
+    for (const f of fragById.values()) if (f.equip.startsWith("04") && !out.some((c) => c.id === f.id)) out.push({ id: f.id, price: f.price, coinTypes: [0, 1] });
     for (const c of components()) if (c.source === "gdraw" && c.component <= 3) out.push({ id: c.id, price: c.price, coinTypes: [0] });
   }
   // Solo candidatos con precio en alguna de sus monedas

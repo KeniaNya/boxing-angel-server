@@ -1,0 +1,35 @@
+﻿名稱	說明	類型0創角1關卡2等級3足夠	數值	是否有教學0否 1是	註解	顯示訊息(多國語言)	Atlas	Sprite	需通知
+BattleButton	按鈕戰鬥-按鈕操作	1	3201030	1	夢境1-1				0
+BattleFree1	自由戰鬥1	1	3201060	1	夢境1-2				0
+BattleAI	戰鬥AI	1	3201090	1	夢境1-3				0
+KnowBlueprint	認識圖紙	1	3201090	1	認識圖紙	Blueprint	5	NULL	1
+EquipGloves	裝備-手套(合成.插槽.品質)	4	3006013	1	LV2	UnlockEquip	6	C_button_03	1
+EquipSuit	裝備-衣服	2	2	0	LV2	Suit	2	C_button_02	0
+EquipShoes	裝備-鞋子	2	2	0	LV2	Shoes	2	C_button_04	0
+Lottery	轉蛋	2	3	0	LV6	Lottery	2	A_button_01	1
+TrainBaseAttribute	訓練角色	2	4	1	LV7	TrainingBasic	2	D_button_01	1
+MissionDaily	活動-每日活動	2	4	1	LV5	Mission_Daily	2	I_button_01	1
+KnowElite	精英關卡	1	1001180	0	完成第一章第六大關	Level Elite	3	F_button_02	0
+EquipStarUp	裝備升星	3		1	裝備碎片足夠時，點到該裝備				0
+BoxingCombo	組合拳	2	7	1	LV7	BoxingCombo	4	NULL	1
+ChangeRole	角色切換	2	9	1	Lv9	Switch	2	B_button_01	1
+TrainSkill	技能	2	8	1	Lv8	TrainingSpecial	2	D_button_02	1
+Friend	好友	2	10	0	Lv10	Friend_Friend	2	Button_L09	0
+PVP	挑戰賽	2	11	1	LV11	Angel Tournament	2	Button_L01	1
+Store	商店	2	13	1	LV13	Shop	2	Button_L02	1
+ExchangeCoin	點金手	2	99	0	Lv15	ChangeTitle	0	UI_Store_exchange	0
+OutSide	會外賽	2	16	1	Lv17	Boxing Show	2	Button_L06	1
+Special	特殊聯賽	2	20	1	Lv20	Special Tournament	2	Button_L05	1
+EliteBattle	精英爭霸賽	2	70	1	Lv70	Elite Championship	2	Button_L08	1
+Supply_Trainer	整備-訓練師	2	22	1	Lv22	Trainer	2	E_button_03	1
+Supply_Physician	整備-防護員	2	23	1	Lv23	Athletic Trainer	2	E_button_01	1
+Skill2	技能	2	27	1	Lv27	SkillCell2	2	C_button_07	1
+Supply_Guard	整備-折凳	2	30	1	Lv30	Campstool	2	E_button_04	1
+Supply_CheerTeam	整備-啦啦隊員	2	46	1	Lv46	Cheerleading	2	E_button_02	1
+Supply_Campstool	整備-護牙套	2	50	1	Lv50	Braces	2	E_button_05	1
+Role1	角色	2	0	0	Lv0	RoleUnlock	1	head_1100001	0
+Role2	角色-日向	2	0	0	Lv0	RoleUnlock	1	head_1100002	0
+Role3	角色-翼	2	25	0	Lv25	RoleUnlock	1	head_1100003	1
+Role4	角色-芽衣紗	2	35	0	Lv35	RoleUnlock	1	head_1100004	1
+Role5	角色-茜	2	0	0	Lv0	RoleUnlock	1	head_1100005	0
+Role6	角色-羽月	2	41	0	Lv41	RoleUnlock	1	head_1100006	1

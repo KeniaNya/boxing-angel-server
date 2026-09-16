@@ -5,6 +5,7 @@
 import { table } from "./gamedata.ts";
 import type { Player, Role, Equip } from "./players.ts";
 import { newEquip } from "./players.ts";
+import { config } from "./config.ts";
 
 export type Frame = { methodName: string; paramObject: Record<string, unknown> };
 export type RewardItem = { id: string; amount: number };
@@ -113,6 +114,7 @@ export function addPlayerExp(p: Player, amount: number): { lv: number; exp: numb
   }
   p.lv = lv;
   p.exp = exp;
+  if (gained > 0) addCoin(p, "vcoin", gained * config().economy.levelUpDiamonds); // panel -> Economia (des-gachificar)
   return { lv, exp, levelsGained: gained };
 }
 export function addRoleExp(r: Role, amount: number): { lv: number; exp: number } {

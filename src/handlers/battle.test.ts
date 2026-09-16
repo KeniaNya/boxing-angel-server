@@ -1,12 +1,14 @@
 import { test, expect } from "bun:test";
 import { testSession } from "../testutil.ts";
 import { hallroadExp, lvInfo, itemCount } from "../economy.ts";
+import { config } from "../config.ts";
 
 const first = (out: { methodName: string; paramObject: Record<string, unknown> }[]) => out[0].paramObject;
 
 test("jugar y reportar un capitulo normal avanza ch_progress y da exp/recompensas", async () => {
   const { p, send } = await testSession();
   const ap0 = p.ap;
+  const vcoin0 = p.coin[1];
   const play = first(await send("PlayChapterC2S", { chapter: "1001010" }));
   expect(play.res).toBe(0);
   expect(play.isPass).toBe(false); // 1001010 no es nodo de mapa (posType 0)
@@ -30,9 +32,12 @@ test("jugar y reportar un capitulo normal avanza ch_progress y da exp/recompensa
   // AP total de la victoria = apNeed (6), mas el regalo de AP si subio de nivel
   expect(p.ap).toBe(ap0 - 6 + (levelUp ? lvInfo(2).apGift : 0));
   expect(r.ap).toBe(p.ap);
-  // recompensa segura de la tabla: 0511007 x2
+  // recompensa segura de la tabla: 0511007 x2, mas los diamantes de la primera victoria (panel -> Economia)
+  const eco = config().economy;
+  const diamonds = eco.storyDiamondsFirstClear + eco.storyDiamondsReplay + (levelUp ? eco.levelUpDiamonds : 0);
   expect(itemCount(p, "0511007")).toBe(2);
-  expect(r.reward).toEqual([["0511007", 2]]);
+  expect(r.reward).toEqual([["0511007", 2], ["vcoin", eco.storyDiamondsFirstClear + eco.storyDiamondsReplay]]);
+  expect(p.coin[1]).toBe(vcoin0 + diamonds);
   expect(Array.isArray(r.gold)).toBe(true);
   expect((r.gold as number[]).length).toBe(3);
   expect(p.scores.find((s) => s.ch_id === "1001010")?.score).toEqual([1, 1, 1]);
@@ -41,6 +46,13 @@ test("jugar y reportar un capitulo normal avanza ch_progress y da exp/recompensa
 
   // reportar sin capitulo en curso falla
   expect(first(await send("ReportChapterC2S", { score: [1, 1, 1], rate: [], isPass: false })).res).toBe(1005);
+
+  // segunda victoria en el mismo capitulo: solo los diamantes de repeticion
+  const vcoin1 = p.coin[1], lv1 = p.lv;
+  expect(first(await send("PlayChapterC2S", { chapter: "1001010" })).res).toBe(0);
+  const again = first(await send("ReportChapterC2S", { score: [1, 1, 1], rate: [], isPass: false }));
+  expect(again.res).toBe(0);
+  expect(p.coin[1]).toBe(vcoin1 + eco.storyDiamondsReplay + (p.lv - lv1) * eco.levelUpDiamonds);
 });
 
 test("un capitulo no alcanzado no se puede jugar; sin AP tampoco", async () => {
@@ -142,12 +154,14 @@ test("combate de elite: lista, rival, victoria y nodo de premio en orden", async
   expect(p.eb_progress).toBe("");
   expect((first(await send("GetEliteBattleRivalC2S", { index: 0 })).rival as Record<string, unknown>).hp).toBe(40);
 
+  const vElite = p.coin[1];
   for (let i = 0; i < 3; i++) {
     r = first(await send("ReportEliteBattleC2S", { index: i, role_id: p.last_use, role_hp: 80, role_anger: 0, tag_hp: 0, tag_anger: 0 }));
     expect(r.res).toBe(0);
     expect(r.progress).toBe(i + 1);
   }
   expect(p.eb_progress).toBe("3");
+  expect(p.coin[1]).toBe(vElite + 3 * config().economy.eliteWinDiamonds); // diamantes por victoria de elite
   expect(p.roles[p.last_use].elite_battle_hp).toBe(80);
   // indice 3 = nodo de premio (50 ecoin)
   const e0 = p.coin[3];

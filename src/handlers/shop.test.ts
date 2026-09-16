@@ -1,7 +1,7 @@
 import { test, expect } from "bun:test";
 import { testSession } from "../testutil.ts";
 import { coin, itemCount, findEquip, isEquipId } from "../economy.ts";
-import { fragmentOfEquip, lotteryPool, LOTTERY } from "./shop.ts";
+import { fragmentOfEquip, lotteryPool, LOTTERY, generateStock, STORE } from "./shop.ts";
 
 type Obj = Record<string, any>;
 
@@ -189,4 +189,12 @@ test("compras in-app no disponibles", async () => {
   expect((await send("IAPBC2S", { type: 0, receipt: "x", productId: "mono.gp_dia175", packageName: "p" }))[0].paramObject.res).toBe(1025);
   expect((await send("ReportIAPBC2S", { pay_order: "1" }))[0].paramObject.res).toBe(1003);
   expect((await send("dmmPurchasebeforeC2S", { paymentId: "1" }))[0].paramObject.res).toBe(1003);
+});
+
+test("la tienda normal vende fragmentos del equipo de apoyo (logistica) por oro o diamantes", () => {
+  const seen = new Set<string>();
+  for (let i = 0; i < 200; i++) for (const row of generateStock(STORE.NORMAL, "seed-" + i)) seen.add(String(row[1]));
+  const logistics = [...seen].filter((id) => id.startsWith("0510"));
+  expect(logistics.length).toBeGreaterThan(0);
+  expect(fragmentOfEquip("0401001")?.id).toBe("0510001");
 });

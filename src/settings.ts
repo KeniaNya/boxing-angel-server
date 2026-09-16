@@ -4,6 +4,8 @@
 // Indices de campo tomados de CSDatabase.InitChannelVersionData, LoadNetworkInfoData y
 // CSDownload.CheckSettingData del cliente decompilado.
 
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { buildZip } from "./zip.ts";
 
 export type SettingsConfig = {
@@ -21,6 +23,8 @@ export type SettingsConfig = {
   dataVersion: number;
   /** Flags de funciones (Android_connect_info) */
   flags: { showTutorial: 0 | 1; isNPC: 0 | 1; isStory: 0 | 1; isPVP: 0 | 1; sexySystem: 0 | 1 };
+  /** Precio en diamantes de los personajes de pago (0 = el de role_info): se sirve una role_info corregida en el zip */
+  rolePriceDiamonds: number;
 };
 
 const CRLF = "\r\n";
@@ -87,6 +91,28 @@ export function gameConfigJson(cfg: SettingsConfig): { status: string; data: { n
 export function coverLocalization(): string {
   // Sobrescrituras de textos (clave TAB valor). Vacio por ahora: solo cabecera.
   return row(["key", "value"]) + CRLF;
+}
+
+/**
+ * Tablas del OBB corregidas a partir de la configuracion (se generan al vuelo, a diferencia de las de `tables/`).
+ * role_info.txt: col 5 = precio en diamantes de cada personaje; con rolePriceDiamonds > 0 se sustituye el de los
+ * personajes de pago para que el cliente muestre y cobre lo mismo que el servidor (handlers/inventory.ts BuyRoleC2S).
+ */
+export function dynamicTables(cfg: SettingsConfig): { name: string; data: Uint8Array }[] {
+  const out: { name: string; data: Uint8Array }[] = [];
+  if (cfg.rolePriceDiamonds > 0) {
+    const raw = readFileSync(join(import.meta.dir, "..", "gamedata", "role_info.txt"), "utf8");
+    const lines = raw.split("\n").map((line, i) => {
+      if (i === 0) return line;
+      const eol = line.endsWith("\r") ? "\r" : "";
+      const f = (eol ? line.slice(0, -1) : line).split("\t");
+      if (!/^\d+$/.test(f[0] ?? "") || Number(f[5]) <= 0) return line;
+      f[5] = String(cfg.rolePriceDiamonds);
+      return f.join("\t") + eol;
+    });
+    out.push({ name: "role_info.txt", data: new TextEncoder().encode(lines.join("\n")) });
+  }
+  return out;
 }
 
 /** Indice de AssetBundles vacio: el cliente no descarga nada y carga todo desde el OBB. */

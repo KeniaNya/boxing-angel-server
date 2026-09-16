@@ -38,6 +38,7 @@ import { table, tableById, roleTable } from "../gamedata.ts";
 const R = { OK: 0, NO_DATA: 1002, WRONG_DATA: 1003, MAX_TIMES: 1012, REQUIREMENT: 1019 };
 
 export const PVP_TIMES_MAX = 5; // CSDataCenter.s_PVP_TimesMax
+const PVP_WIN_DIAMONDS = () => config().economy.pvpWinDiamonds; // panel -> Economia (des-gachificar)
 export const PVP_COOLDOWN_MS = 600 * 1000; // CSDataCenter.s_PVP_RecoveryTime (s)
 export const NPC_LADDER = 100; // puestos virtuales rellenados por NPC
 const RECORDS_MAX = 20;
@@ -270,7 +271,8 @@ function opponentRow(o: Opp): unknown[] {
       const attr: Record<string, number> = {};
       for (const k of ["1", "2", "3", "4", "5", "6"]) attr[k] = Math.round(num(role.prop[k], 1));
       const eq = [...role.equip_in, "", "", "", "", "", ""].slice(0, 6).map((id) => pvpEquip(q, id));
-      return [o.rank, 0, q.pvp_victory, q.pvp_fail, o.auid, o.name, o.rid, o.lv, attr, ...eq, pvpSkill(q, role.skill), pvpSkill(q, role.skill2), role.pvp_ai_type || "1010", "", "", "", "", "", role.passive_skill];
+      const lg = [...role.logistics, "", "", "", "", ""].slice(0, 5).map((id) => pvpEquip(q, id)); // el cliente los reparte por tipo (GetLogisticsTypeById)
+      return [o.rank, 0, q.pvp_victory, q.pvp_fail, o.auid, o.name, o.rid, o.lv, attr, ...eq, pvpSkill(q, role.skill), pvpSkill(q, role.skill2), role.pvp_ai_type || "1010", ...lg, role.passive_skill];
     }
   }
   const { row, ai } = npcAt(o.rank);
@@ -465,7 +467,12 @@ export const handlers: Record<string, PlayerHandler> = {
       else e.liveLosses = (e.liveLosses ?? 0) + 1;
       const rec: BattleRecord = { ctime: Date.now(), opponent_auid: o.auid, opponent_name: o.name, opponent_rid: o.rid, opponent_lv: o.lv, variation: 0 };
       addRecord(p, rec);
-      return [s2c("ReportPvPBattleResultsS2C", { res: 0, victory: p.pvp_victory, fail: p.pvp_fail, rank: p.pvp_rank, record: rec })];
+      const liveFrames: Frame[] = [];
+      if (win && PVP_WIN_DIAMONDS() > 0) {
+        addCoin(p, "vcoin", PVP_WIN_DIAMONDS());
+        liveFrames.push(notice.coin(p));
+      }
+      return [s2c("ReportPvPBattleResultsS2C", { res: 0, victory: p.pvp_victory, fail: p.pvp_fail, rank: p.pvp_rank, record: rec }), ...liveFrames];
     }
     const oldRank = p.pvp_rank;
     let newRank = oldRank;
@@ -491,10 +498,9 @@ export const handlers: Record<string, PlayerHandler> = {
       }
       p.pvp_rank = newRank;
       const rw = pvpRewardByRank(newRank);
-      if (rw && rw.pcoin > 0) {
-        addCoin(p, "pcoin", rw.pcoin);
-        frames.push(notice.coin(p));
-      }
+      if (rw && rw.pcoin > 0) addCoin(p, "pcoin", rw.pcoin);
+      if (PVP_WIN_DIAMONDS() > 0) addCoin(p, "vcoin", PVP_WIN_DIAMONDS());
+      if ((rw && rw.pcoin > 0) || PVP_WIN_DIAMONDS() > 0) frames.push(notice.coin(p));
     } else p.pvp_fail++;
     const record: BattleRecord = { ctime: now, opponent_auid: o.auid, opponent_name: o.name, opponent_rid: o.rid, opponent_lv: o.lv, variation: oldRank - newRank };
     addRecord(p, record);

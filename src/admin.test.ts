@@ -29,6 +29,29 @@ test("admin: regalo por correo, edicion y objetos directos", async () => {
 
   const bad = await call("PUT", "/admin/api/config", { gachaType: 9 });
   expect(bad.status).toBe(400);
+  const badEco = await call("PUT", "/admin/api/config", { economy: { rolePriceDiamonds: -5 } });
+  expect(badEco.status).toBe(400);
+  const ok = await call("PUT", "/admin/api/config", { economy: { rolePriceDiamonds: 777, storyDiamondsFirstClear: 12 } });
+  expect(ok.status).toBe(200);
+  const cfg = (await ok.json()) as { economy: { rolePriceDiamonds: number; storyDiamondsFirstClear: number; levelUpDiamonds: number } };
+  expect(cfg.economy.rolePriceDiamonds).toBe(777);
+  expect(cfg.economy.storyDiamondsFirstClear).toBe(12);
+  expect(cfg.economy.levelUpDiamonds).toBeGreaterThanOrEqual(0);
+});
+
+test("role_info generada con el precio del panel: solo cambia la columna de precio de los personajes de pago", async () => {
+  const { dynamicTables } = await import("./settings.ts");
+  const base = { host: "h", baseUrl: "http://h", connection: 1 as const, clientVersions: ["1.0.18"], networkName: "n", dataVersion: 1, flags: { showTutorial: 1 as const, isNPC: 1 as const, isStory: 1 as const, isPVP: 1 as const, sexySystem: 1 as const } };
+  expect(dynamicTables({ ...base, rolePriceDiamonds: 0 })).toEqual([]);
+  const [t] = dynamicTables({ ...base, rolePriceDiamonds: 777 });
+  expect(t.name).toBe("role_info.txt");
+  const lines = new TextDecoder().decode(t.data).split("\n");
+  const rows = lines.slice(1).filter((l) => /^\d+\t/.test(l)).map((l) => l.split("\t"));
+  expect(rows.length).toBe(7);
+  expect(rows.find((f) => f[0] === "1100001")?.[5]).toBe("0"); // Erisa sigue gratis
+  for (const f of rows.filter((f) => f[0] !== "1100001")) expect(f[5]).toBe("777");
+  const { table } = await import("./gamedata.ts");
+  expect(rows.map((f) => f.length)).toEqual(table("role_info.txt").map((f) => f.length)); // mismas columnas que el original
 });
 
 test("admin: borrar personaje y cuenta", async () => {

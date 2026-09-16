@@ -4,7 +4,7 @@
 import { mkdirSync, existsSync, readFileSync, writeFileSync, renameSync, readdirSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
-import { roleTable, chapterIds } from "./gamedata.ts";
+import { roleTable, chapterIds, tableById } from "./gamedata.ts";
 import { config } from "./config.ts";
 
 const APPDATA = process.env.LENA_APPDATA || join(import.meta.dir, "..");
@@ -186,8 +186,42 @@ export function createPlayer(acc: string, name: string, rid: string): Player {
     createdAt: new Date(now).toISOString(),
     ext: {},
   };
+  ensureRoleData(p);
   savePlayer(p);
   return p;
+}
+
+export const LOGISTICS_SLOTS = 5; // PacketRoleInfo.m_Logistics = string[5] (defensa, entrenador, animadora, protector, taburete)
+
+/**
+ * Pone al dia los roles de un jugador: (a) la logistica siempre lleva 5 huecos (el cliente indexa
+ * Logistics[tipo - 1] sin comprobar el tamano) y (b) cada rol trae aprendidas sus habilidades propias
+ * (role_info cols 11/12): el cliente las marca como aprendidas al comprar el rol, pero en el siguiente login
+ * solo cree tener las que manda la lista "skill" del servidor. Devuelve las habilidades anadidas.
+ */
+export function ensureRoleData(p: Player): string[] {
+  const added: string[] = [];
+  for (const [rid, role] of Object.entries(p.roles)) {
+    if (!Array.isArray(role.logistics)) role.logistics = [];
+    while (role.logistics.length < LOGISTICS_SLOTS) role.logistics.push("");
+    for (const id of roleTable().get(rid)?.skills ?? []) {
+      if (p.skills.some((k) => k.id === id)) continue;
+      p.skills.push({ id, strengthen_prop: skillPropSlots(id).map(() => 1) });
+      added.push(id);
+    }
+  }
+  return added;
+}
+
+/** Atributos mejorables de una habilidad (skill_info col 25, JSON); 4 si la tabla no lo dice. */
+function skillPropSlots(id: string): number[] {
+  try {
+    const a = JSON.parse((tableById("skill_info.txt").get(id)?.[25] ?? "").trim() || "[]");
+    if (Array.isArray(a) && a.length > 0) return a.map(Number);
+  } catch {
+    /* sin configuracion */
+  }
+  return [1, 2, 3, 4];
 }
 
 export function newSessionKey(): string {

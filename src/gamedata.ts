@@ -37,12 +37,13 @@ export function tableById(name: string): Map<string, string[]> {
   return m;
 }
 
-export type RoleInfo = { id: string; nameKey: string; unlockLevel: number; price: number; defaultEquip: string[] };
+export type RoleInfo = { id: string; nameKey: string; unlockLevel: number; price: number; defaultEquip: string[]; skills: string[] };
 
 let roles: Map<string, RoleInfo> | null = null;
 let chapters: string[] | null = null;
 
-/** role_info: 0 id, 1 nombre, 2 props base, 3 crecimiento, 4 nivel desbloqueo, 5 precio (vcoin), 6 equipo inicial (JSON array de 6) */
+/** role_info: 0 id, 1 nombre, 2 props base, 3 crecimiento, 4 nivel desbloqueo, 5 precio (vcoin), 6 equipo inicial (JSON array de 6),
+ *  11/12 habilidades propias del rol (el cliente las da por aprendidas al comprarlo: CSDataCenter.SetDataWithBuyRoleResult) */
 export function roleTable(): Map<string, RoleInfo> {
   if (!roles) {
     roles = new Map();
@@ -54,7 +55,8 @@ export function roleTable(): Map<string, RoleInfo> {
       } catch {
         /* sin equipo inicial */
       }
-      roles.set(f[0], { id: f[0], nameKey: f[1], unlockLevel: Number(f[4] || 0), price: Number(f[5] || 0), defaultEquip: eq });
+      const skills = [f[11], f[12]].map((s) => (s ?? "").trim()).filter((s) => s !== "");
+      roles.set(f[0], { id: f[0], nameKey: f[1], unlockLevel: Number(f[4] || 0), price: Number(f[5] || 0), defaultEquip: eq, skills });
     }
   }
   return roles;

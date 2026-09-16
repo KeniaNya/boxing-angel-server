@@ -4,7 +4,7 @@
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
 import { resolveToken } from "./accounts.ts";
-import { loadPlayer, createPlayer, savePlayer, newSessionKey, type Player, type Role } from "./players.ts";
+import { loadPlayer, createPlayer, savePlayer, newSessionKey, type Player, type Role, ensureRoleData } from "./players.ts";
 import { s2c, refreshAp, refreshTp, type Frame } from "./economy.ts";
 import { config } from "./config.ts";
 import { todayOpenChapters } from "./catalog.ts";
@@ -16,6 +16,7 @@ import { onEvent as missionEvent, newMailNotice } from "./handlers/missions.ts";
 
 /** Reinicios diarios centralizados (se aplican en el login y antes de cada mensaje). */
 function dailyRefresh(p: Player): void {
+  ensureRoleData(p);
   refreshAp(p);
   refreshTp(p);
   refreshShopDaily(p);

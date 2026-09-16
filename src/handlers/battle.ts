@@ -29,6 +29,9 @@ const ELITE_RESET_FREE = 1; // CSDataCenter.s_EliteResetFreeTimes
 // Editables desde el panel (config.economy).
 const GOLD_PER_ROUND = () => config().economy.goldPerRound;
 const ELITE_WIN_GOLD = () => config().economy.eliteWinGold;
+// Diamantes por jugar (panel -> Economia, "des-gachificar"): la historia es la fuente principal de diamantes.
+const STORY_DIAMONDS = (firstClear: boolean) => (firstClear ? config().economy.storyDiamondsFirstClear : 0) + config().economy.storyDiamondsReplay;
+const ELITE_WIN_DIAMONDS = () => config().economy.eliteWinDiamonds;
 
 // ---------------------------------------------------------------------------------------------
 // Estado propio del dominio (player.ext.battle)
@@ -372,6 +375,12 @@ export const handlers: Record<string, PlayerHandler> = {
 
     // evaluacion por asalto (menor es mejor, 0 = sin jugar) y contadores
     const sc = score(p, c);
+    // diamantes por la victoria (mas la primera vez); van en la lista de la pantalla de victoria (CSItemObject pinta "vcoin")
+    const diamonds = STORY_DIAMONDS(sc.times === 0);
+    if (diamonds > 0) {
+      addCoin(p, "vcoin", diamonds);
+      rewards.push({ id: "vcoin", amount: diamonds });
+    }
     for (let i = 0; i < 3; i++) if (scores[i] !== 0 && (sc.score[i] === 0 || scores[i] < sc.score[i])) sc.score[i] = scores[i];
     sc.times++;
     if (c.type === CH.SPECIAL || c.type === CH.OUTSIDE) {
@@ -570,6 +579,7 @@ export const handlers: Record<string, PlayerHandler> = {
     st.eliteNpc[String(index)] = { hp: tagHp, anger: tagAnger };
     const gcoin = win ? Math.round(ELITE_WIN_GOLD() * c.coinRate) : 0;
     addCoin(p, "gcoin", gcoin);
+    if (win) addCoin(p, "vcoin", ELITE_WIN_DIAMONDS());
     if (win) p.eb_progress = String(c.attachId);
     return [
       s2c(R, { res: 0, progress: ebProgress(p), gcoin, role_hp: roleHp, role_anger: roleAnger, tag_hp: tagHp, tag_anger: tagAnger }),

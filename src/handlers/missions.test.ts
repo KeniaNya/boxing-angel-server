@@ -1,6 +1,7 @@
 import { test, expect } from "bun:test";
 import { testSession } from "../testutil.ts";
 import { onEvent, missionInfos, WELCOME_MAIL, MISSION_FINISH, MISSION_CLAIMED, MISSION_DOING } from "./missions.ts";
+import { config } from "../config.ts";
 
 const find = (list: unknown, id: string) => (list as { id: string; status: number; progress: number }[]).find((m) => m.id === id);
 
@@ -20,7 +21,7 @@ test("GetMission devuelve todas las misiones de la tabla con status/progress", a
 
 test("onEvent completa la mision y ReceiveMissionReward la cobra una sola vez", async () => {
   const { send, p } = await testSession();
-  const vcoinBefore = p.coin[1];
+  const vcoinBefore = p.coin[1], lvBefore = p.lv;
   const frames = onEvent(p, "gacha");
   expect(frames.length).toBe(1);
   expect(frames[0].methodName).toBe("NoticeUpdateMissionS2C");
@@ -33,7 +34,7 @@ test("onEvent completa la mision y ReceiveMissionReward la cobra una sola vez", 
   expect(r.paramObject.coin).toEqual([0, 25, 0, 0]);
   expect(r.paramObject.lv).toBe(p.lv);
   expect(r.paramObject.exp).toBe(p.exp);
-  expect(p.coin[1]).toBe(vcoinBefore + 25);
+  expect(p.coin[1]).toBe(vcoinBefore + 25 + (p.lv - lvBefore) * config().economy.levelUpDiamonds); // + diamantes por subir de nivel
   expect(p.exp + (p.lv - 1) * 1000).toBeGreaterThan(0); // ha recibido exp (haya subido o no)
 
   const [again] = await send("ReceiveMissionRewardC2S", { id: "3016002" });

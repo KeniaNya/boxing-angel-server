@@ -2,6 +2,8 @@ import { test, expect } from "bun:test";
 import { testSession } from "../testutil.ts";
 import { fragmentOf, itemInfo, skillBuyCost, equipInfo, priceAt, PRICE } from "./inventory.ts";
 import { roleTable } from "../gamedata.ts";
+import { rolePriceDiamonds } from "../config.ts";
+import { ensureRoleData } from "../players.ts";
 import { addEquip, findEquip, itemCount } from "../economy.ts";
 
 const res = (out: { paramObject: Record<string, unknown> }[]) => out[0].paramObject.res;
@@ -11,20 +13,40 @@ test("BuyRole: falla sin diamantes, luego descuenta y crea el rol con su equipo 
   const rid = "1100002";
   const info = roleTable().get(rid)!;
   expect(info.price).toBeGreaterThan(0);
-  p.coin[1] = info.price - 1;
+  const price = rolePriceDiamonds(info.price); // precio del panel (des-gachificar), no el de la tabla
+  expect(price).toBeGreaterThan(0);
+  expect(price).toBeLessThanOrEqual(info.price);
+  p.coin[1] = price - 1;
   expect(res(await send("BuyRoleC2S", { rid }))).toBe(1016);
   expect(p.roles[rid]).toBeUndefined();
 
-  p.coin[1] = info.price + 100;
+  p.coin[1] = price + 100;
   const out = await send("BuyRoleC2S", { rid });
   expect(res(out)).toBe(0);
   expect(p.coin[1]).toBe(100);
   expect(p.roles[rid]).toBeDefined();
   expect(p.roles[rid].equip_in).toEqual(info.defaultEquip);
+  expect(p.roles[rid].logistics).toEqual(["", "", "", "", ""]);
+  // las habilidades propias del rol (role_info cols 11/12) quedan aprendidas de verdad
+  expect(info.skills.length).toBe(2);
+  for (const id of info.skills) expect(p.skills.find((k) => k.id === id)?.strengthen_prop).toEqual([1, 1, 1, 1]);
   for (const id of info.defaultEquip.filter((x) => x !== "")) expect(findEquip(p, id)).toBeDefined();
   expect(out.some((f) => f.methodName === "NoticeUpdateS2C" && f.paramObject.cmd === "coin")).toBe(true);
   expect(res(await send("BuyRoleC2S", { rid }))).toBe(1008);
   expect(res(await send("BuyRoleC2S", { rid: "9999999" }))).toBe(1003);
+});
+
+test("el jugador nuevo trae la habilidad propia de su rol y ensureRoleData repara a los antiguos", async () => {
+  const { p } = await testSession();
+  const own = roleTable().get(p.last_use)!.skills;
+  expect(own).toEqual(["0301013"]); // Erisa
+  expect(p.skills.map((k) => k.id)).toEqual(own);
+  // jugador de antes del arreglo: sin habilidades y con la logistica vacia
+  p.skills = [];
+  p.roles[p.last_use].logistics = [];
+  expect(ensureRoleData(p)).toEqual(own);
+  expect(p.roles[p.last_use].logistics.length).toBe(5);
+  expect(ensureRoleData(p)).toEqual([]); // idempotente
 });
 
 test("ChangeRole cambia last_use y devuelve el rol", async () => {
@@ -47,6 +69,26 @@ test("SetupEquip / TakeOffEquip actualizan equip_in", async () => {
   expect(role.equip_in[2]).not.toBe(before);
   expect(res(await send("TakeOffEquipC2S", { index: 2, type: 0 }))).toBe(0);
   expect(role.equip_in[2]).toBe("");
+});
+
+test("equipo de apoyo (logistica 04xxxxx): SetupEquip lo pone en su hueco y TakeOffEquip type 1 lo quita", async () => {
+  const { p, send } = await testSession();
+  const role = p.roles[p.last_use];
+  addEquip(p, "0401001"); // entrenador -> hueco 1
+  addEquip(p, "0402001"); // defensa -> hueco 0
+  expect(equipInfo("0401001")?.reqLv).toBe(20);
+  expect(res(await send("SetupEquipC2S", { eid: "0401001", index: 1, rid: p.last_use }))).toBe(1019); // nivel de rol 20
+  role.lv = 20;
+  expect(res(await send("SetupEquipC2S", { eid: "0401001", index: 0, rid: p.last_use }))).toBe(1003); // hueco equivocado
+  expect(res(await send("SetupEquipC2S", { eid: "0401002", index: 1, rid: p.last_use }))).toBe(1005); // no se posee
+  expect(res(await send("SetupEquipC2S", { eid: "0401001", index: 1, rid: p.last_use }))).toBe(0);
+  expect(res(await send("SetupEquipC2S", { eid: "0402001", index: 0, rid: p.last_use }))).toBe(0);
+  expect(role.logistics).toEqual(["0402001", "0401001", "", "", ""]);
+  expect(role.equip_in.includes("0401001")).toBe(false);
+  expect(res(await send("TakeOffEquipC2S", { index: 4, type: 1 }))).toBe(0); // hueco vacio: no pasa nada
+  expect(res(await send("TakeOffEquipC2S", { index: 5, type: 1 }))).toBe(1003);
+  expect(res(await send("TakeOffEquipC2S", { index: 1, type: 1 }))).toBe(0);
+  expect(role.logistics).toEqual(["0402001", "", "", "", ""]);
 });
 
 test("Sell quita el objeto y suma oro", async () => {

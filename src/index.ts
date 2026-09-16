@@ -4,7 +4,7 @@
 //
 // Convencion LenaCloud: escucha en process.env.PORT. Estado persistente en LENA_APPDATA.
 
-import { settingsZip, bundleDatabaseList, type SettingsConfig, gameConfigJson } from "./settings.ts";
+import { settingsZip, bundleDatabaseList, dynamicTables, type SettingsConfig, gameConfigJson } from "./settings.ts";
 import { loadHandlerModules } from "./game.ts";
 import { config, onConfigChange, newsHtml } from "./config.ts";
 import { handleAdmin } from "./admin.ts";
@@ -34,6 +34,7 @@ function settingsCfg(): SettingsConfig {
     networkName: c.networkName,
     dataVersion: c.dataVersion,
     flags: c.flags,
+    rolePriceDiamonds: c.economy.rolePriceDiamonds,
   };
 }
 
@@ -43,10 +44,15 @@ const overrideTables = existsSync(TABLES_DIR)
   ? readdirSync(TABLES_DIR).filter((f) => f.endsWith(".txt")).map((f) => ({ name: f, data: new Uint8Array(readFileSync(join(TABLES_DIR, f))) }))
   : [];
 
+// Las de tables/ mandan sobre las generadas a partir de la configuracion (role_info con el precio del panel).
+function allOverrides(cfg: SettingsConfig) {
+  return [...overrideTables, ...dynamicTables(cfg).filter((d) => !overrideTables.some((t) => t.name === d.name))];
+}
+
 const startedAt = new Date();
-let zipBytes = settingsZip(settingsCfg(), overrideTables);
+let zipBytes = settingsZip(settingsCfg(), allOverrides(settingsCfg()));
 onConfigChange(() => {
-  zipBytes = settingsZip(settingsCfg(), overrideTables);
+  zipBytes = settingsZip(settingsCfg(), allOverrides(settingsCfg()));
 });
 const nAccounts = loadAccounts();
 

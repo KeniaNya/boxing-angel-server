@@ -12,9 +12,9 @@
 
 import type { PlayerHandler, Frame } from "../game.ts";
 import { s2c, coin, pay, addCoin, itemCount, addItem, removeItem, findEquip, addEquip, removeEquip, isEquipId, addPlayerExp, addRoleExp, refreshAp, currentRole, notice, type RewardItem, spendTp } from "../economy.ts";
-import { ext, newRole, type Player, type Role, type Equip } from "../players.ts";
+import { ext, newRole, ensureRoleData, LOGISTICS_SLOTS, type Player, type Role, type Equip } from "../players.ts";
 import { table, tableById, roleTable } from "../gamedata.ts";
-import { config } from "../config.ts";
+import { config, rolePriceDiamonds } from "../config.ts";
 
 // Codigos (Localization del cliente, <Msg>_NNNN): 1002 "faltan parametros" · 1003 "parametro incorrecto"
 // · 1005 "no existe (equipo/rol/objeto/habilidad)" · 1008 BuyRole "el rol ya existe" · 1012 "limite superado"
@@ -45,7 +45,7 @@ const num = (s: string | undefined, d = 0) => {
 
 /** equip_info: 0 id, 7 precio reciclaje, 8 precio compra, 10 nivel requerido, 14 calidad inicial, 16 oculto,
  *  23..28 piezas requeridas por calidad 1..6 (JSON de 6 ids), 32 rareza, 33 fragmentos al convertir, 34 estrellas iniciales, 35 limite encantamientos */
-export type EquipInfo = { id: string; sellPrice: number; quality: number; initLv: number; buffLimit: number; toFragment: number; rare: string; hidden: boolean; slotRequires: string[][]; qualityMax: number };
+export type EquipInfo = { id: string; sellPrice: number; reqLv: number; quality: number; initLv: number; buffLimit: number; toFragment: number; rare: string; hidden: boolean; slotRequires: string[][]; qualityMax: number };
 const equipCache = new Map<string, EquipInfo>();
 export function equipInfo(id: string): EquipInfo | undefined {
   let e = equipCache.get(id);
@@ -60,7 +60,7 @@ export function equipInfo(id: string): EquipInfo | undefined {
   // CSDatabase: m_QualityMax = calidades con alguna pieza requerida definida (minimo 1)
   const qualityMax = Math.max(1, slotRequires.filter((s) => s.some((x) => x !== "")).length);
   e = {
-    id, sellPrice: num(f[7]), quality: Math.max(1, num(f[14], 1)), initLv: Math.max(1, num(f[34], 1)), buffLimit: num(f[35]),
+    id, sellPrice: num(f[7]), reqLv: num(f[10]), quality: Math.max(1, num(f[14], 1)), initLv: Math.max(1, num(f[34], 1)), buffLimit: num(f[35]),
     toFragment: num(f[33]), rare: (f[32] ?? "").trim().toUpperCase(), hidden: num(f[16]) !== 0, slotRequires, qualityMax,
   };
   equipCache.set(id, e);
@@ -185,6 +185,17 @@ export function slotIndexOf(id: string): number {
   return i >= 0 && i < 6 ? i : -1;
 }
 
+/** Hueco del "equipo de apoyo" (logistica, ids 04xxxxx de equip_info) tal como lo manda el cliente en SetupEquip
+ *  (CSUILogisticsItemList.ChangeSelected): 0402 defensa(0) 0401 entrenador(1) 0403 animadora(2) 0404 protector bucal(3) 0405 taburete(4). */
+const LOGISTICS_INDEX: Record<string, number> = { "0402": 0, "0401": 1, "0403": 2, "0404": 3, "0405": 4 };
+export function logisticsIndexOf(id: string): number {
+  return /^04\d{5}$/.test(id) ? (LOGISTICS_INDEX[id.slice(0, 4)] ?? -1) : -1;
+}
+function logistics5(r: Role): string[] {
+  while (r.logistics.length < LOGISTICS_SLOTS) r.logistics.push("");
+  return r.logistics;
+}
+
 // ---------------------------------------------------------------------------------------------
 // Utilidades de estado
 // ---------------------------------------------------------------------------------------------
@@ -208,6 +219,7 @@ function slots6(e: Equip): string[] {
 function unequipEverywhere(p: Player, eid: string): void {
   for (const r of Object.values(p.roles)) {
     for (let i = 0; i < r.equip_in.length; i++) if (r.equip_in[i] === eid) r.equip_in[i] = "";
+    for (let i = 0; i < r.logistics.length; i++) if (r.logistics[i] === eid) r.logistics[i] = "";
   }
 }
 
@@ -298,7 +310,8 @@ const reply = (name: string, obj: Record<string, unknown>): Frame => s2c(name, o
 // ---------------------------------------------------------------------------------------------
 
 export const handlers: Record<string, PlayerHandler> = {
-  /** Compra un rol con diamantes (role_info col 5, desbloqueo col 4); el cliente espera {res} y crea el rol localmente. */
+  /** Compra un rol con diamantes (precio del panel o role_info col 5; desbloqueo col 4); el cliente espera {res} y crea el
+   *  rol localmente, dando por aprendidas sus habilidades propias (role_info cols 11/12): aqui se registran de verdad. */
   BuyRoleC2S({ p, params }) {
     const rid = str(params.rid);
     if (!rid) return [reply("BuyRoleS2C", { res: R.NO_DATA })];
@@ -306,9 +319,10 @@ export const handlers: Record<string, PlayerHandler> = {
     if (!info) return [reply("BuyRoleS2C", { res: R.WRONG_DATA })];
     if (p.roles[rid]) return [reply("BuyRoleS2C", { res: R.EXISTS })];
     if (p.lv < info.unlockLevel) return [reply("BuyRoleS2C", { res: R.NOT_ENOUGH })];
-    if (!pay(p, "vcoin", info.price)) return [reply("BuyRoleS2C", { res: R.NO_COIN })];
+    if (!pay(p, "vcoin", rolePriceDiamonds(info.price))) return [reply("BuyRoleS2C", { res: R.NO_COIN })];
     const role = newRole(rid);
     p.roles[rid] = role;
+    ensureRoleData(p);
     const equips = role.equip_in.filter((id) => id !== "" && !findEquip(p, id)).map((id) => createEquip(p, id));
     return [reply("BuyRoleS2C", { res: R.OK, change_reward: [], role: roleOut(role) }), notice.coin(p), notice.equips(equips)];
   },
@@ -323,26 +337,38 @@ export const handlers: Record<string, PlayerHandler> = {
     return [reply("ChangeRoleS2C", { res: R.OK, role: roleOut(role) })];
   },
 
-  /** Pone el equipo eid en el hueco index del rol rid; el cliente solo espera {res} y actualiza equip_in localmente. */
+  /** Pone el equipo eid en el hueco index del rol rid; el cliente solo espera {res} y actualiza equip_in localmente.
+   *  Los ids 04xxxxx son el equipo de apoyo (logistica: entrenador, defensa, animadora, protector, taburete) y van a
+   *  role.logistics[index] (5 huecos; el cliente pide ademas el nivel de rol de equip_info col 10, EquipNotEnoughLv). */
   SetupEquipC2S({ p, params }) {
     const eid = str(params.eid), rid = str(params.rid) || p.last_use, index = int(params.index);
     if (!eid || !Number.isInteger(index)) return [reply("SetupEquipS2C", { res: R.NO_DATA })];
     const role = p.roles[rid];
-    if (!role || index < 0 || index > 5 || slotIndexOf(eid) !== index) return [reply("SetupEquipS2C", { res: R.WRONG_DATA })];
+    if (!role) return [reply("SetupEquipS2C", { res: R.WRONG_DATA })];
+    const li = logisticsIndexOf(eid);
+    if (li >= 0) {
+      if (index !== li) return [reply("SetupEquipS2C", { res: R.WRONG_DATA })];
+      if (!findEquip(p, eid)) return [reply("SetupEquipS2C", { res: R.NOT_FOUND })];
+      if (role.lv < (equipInfo(eid)?.reqLv ?? 0)) return [reply("SetupEquipS2C", { res: R.NOT_ENOUGH })];
+      unequipEverywhere(p, eid);
+      logistics5(role)[index] = eid;
+      return [reply("SetupEquipS2C", { res: R.OK })];
+    }
+    if (index < 0 || index > 5 || slotIndexOf(eid) !== index) return [reply("SetupEquipS2C", { res: R.WRONG_DATA })];
     if (!findEquip(p, eid)) return [reply("SetupEquipS2C", { res: R.NOT_FOUND })];
     unequipEverywhere(p, eid);
     role.equip_in[index] = eid;
     return [reply("SetupEquipS2C", { res: R.OK })];
   },
 
-  /** Quita el equipo del hueco index del rol activo (type 0) o el suministro logistico (type 1). Solo {res}. */
+  /** Quita el equipo del hueco index del rol activo (type 0, 6 huecos) o el suministro logistico (type 1, 5 huecos). Solo {res}. */
   TakeOffEquipC2S({ p, params }) {
     const index = int(params.index), type = int(params.type, 0);
     if (!Number.isInteger(index)) return [reply("TakeOffEquipS2C", { res: R.NO_DATA })];
     const role = currentRole(p);
-    const list = type === 1 ? role.logistics : role.equip_in;
-    if (index < 0 || index >= (type === 1 ? Math.max(list.length, 1) : 6)) return [reply("TakeOffEquipS2C", { res: R.WRONG_DATA })];
-    if (index < list.length) list[index] = "";
+    const list = type === 1 ? logistics5(role) : role.equip_in;
+    if (index < 0 || index >= (type === 1 ? LOGISTICS_SLOTS : 6)) return [reply("TakeOffEquipS2C", { res: R.WRONG_DATA })];
+    list[index] = "";
     return [reply("TakeOffEquipS2C", { res: R.OK })];
   },
 

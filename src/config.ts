@@ -56,6 +56,20 @@ export type Economy = {
   starterAp: number;
   /** Correo de bienvenida */
   welcomeMail: { sender: string; title: string; content: string; annex: RewardItem[] };
+  /** Diamantes ("des-gachificar": que cualquiera pueda comprar los personajes jugando la historia).
+   *  rolePriceDiamonds: precio de cada personaje (0 = el de role_info, 3000); se sirve tambien en la tabla role_info
+   *  del zip de Setting para que el cliente muestre el mismo precio (hace falta reiniciar el juego para verlo). */
+  rolePriceDiamonds: number;
+  /** Diamantes la primera vez que se supera cada capitulo (historia, especial, exterior) */
+  storyDiamondsFirstClear: number;
+  /** Diamantes por cada victoria repetida en un capitulo */
+  storyDiamondsReplay: number;
+  /** Diamantes por combate de elite ganado */
+  eliteWinDiamonds: number;
+  /** Diamantes por victoria PvP (escalera y en vivo) */
+  pvpWinDiamonds: number;
+  /** Diamantes por cada nivel de gimnasio que se sube */
+  levelUpDiamonds: number;
 };
 
 const APPDATA = process.env.LENA_APPDATA || join(import.meta.dir, "..");
@@ -99,8 +113,20 @@ export const DEFAULTS: ServerConfig = {
       content: "Thanks for joining the community server. Here is a small gift to get you started. Have fun!",
       annex: [{ id: "gcoin", amount: 3000 }, { id: "vcoin", amount: 50 }, { id: "0202005", amount: 2 }],
     },
+    rolePriceDiamonds: 1000,
+    storyDiamondsFirstClear: 40,
+    storyDiamondsReplay: 5,
+    eliteWinDiamonds: 15,
+    pvpWinDiamonds: 15,
+    levelUpDiamonds: 25,
   },
 };
+
+/** Precio en diamantes de un personaje: el del panel si esta fijado, si no el de role_info. Los gratuitos (precio 0) siguen gratis. */
+export function rolePriceDiamonds(tablePrice: number): number {
+  const c = config().economy.rolePriceDiamonds;
+  return tablePrice > 0 && c > 0 ? c : tablePrice;
+}
 
 let current: ServerConfig | null = null;
 const listeners: Array<(c: ServerConfig) => void> = [];
@@ -230,6 +256,9 @@ function validateEconomy(e: Partial<Economy>): Economy {
     if (m.title !== undefined) out.welcomeMail.title = String(m.title).slice(0, 80);
     if (m.content !== undefined) out.welcomeMail.content = String(m.content).slice(0, 500);
     if (m.annex !== undefined) out.welcomeMail.annex = normalizeRewards(m.annex);
+  }
+  for (const k of ["rolePriceDiamonds", "storyDiamondsFirstClear", "storyDiamondsReplay", "eliteWinDiamonds", "pvpWinDiamonds", "levelUpDiamonds"] as const) {
+    if (e[k] !== undefined) out[k] = num(e[k], k, 0, 1_000_000);
   }
   return out;
 }

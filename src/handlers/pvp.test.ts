@@ -5,6 +5,7 @@ import { testSession, silentLog } from "../testutil.ts";
 const players = await import("../players.ts");
 const game = await import("../game.ts");
 const { PVP_TIMES_MAX, NPC_LADDER } = await import("./pvp.ts");
+const { config } = await import("../config.ts");
 type Player = import("../players.ts").Player;
 
 // testSession solo puede llamarse una vez por proceso (loadHandlerModules rechaza handlers duplicados):
@@ -56,6 +57,7 @@ test("GetPvPOpponent: con otro jugador inscrito lo ofrece como rival real", asyn
 
 test("StartPvPBattle consume un intento y ReportPvPBattleResults intercambia puestos y da pcoin", async () => {
   const before = rival.p.coin[2];
+  const vcoinBefore = rival.p.coin[1];
   const list = (obj((await rival.send("GetPvPOpponentC2S"))[0]).list as unknown[][]);
   const idx = list.findIndex((r) => r[1] === 0);
 
@@ -76,6 +78,7 @@ test("StartPvPBattle consume un intento y ReportPvPBattleResults intercambia pue
   expect(rec.variation).toBe(1);
   expect(out[1].methodName).toBe("NoticeUpdateS2C"); // notice.coin
   expect(rival.p.coin[2]).toBeGreaterThan(before);
+  expect(rival.p.coin[1]).toBe(vcoinBefore + config().economy.pvpWinDiamonds); // diamantes por victoria PvP
   // el perdedor baja un puesto y registra la derrota
   expect(main.p.pvp_rank).toBe(NPC_LADDER + 2);
   expect(main.p.pvp_fail).toBe(1);

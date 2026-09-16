@@ -65,7 +65,7 @@ const auidOf = (p: Player) => currentRole(p).auid;
 const nameEq = (a: string, b: string) => a.localeCompare(b, undefined, { sensitivity: "accent" }) === 0;
 
 /** Busca un jugador por auid (de cualquiera de sus roles) o por nombre. Acepta "xxx_auid" (el cliente parte por "_"). */
-function findPlayer(tag: string): Player | null {
+export function findPlayer(tag: string): Player | null {
   const t = tag.trim();
   if (!t) return null;
   const tail = t.includes("_") ? t.slice(t.lastIndexOf("_") + 1) : t;
