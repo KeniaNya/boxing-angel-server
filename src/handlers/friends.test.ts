@@ -68,6 +68,8 @@ test("A pide amistad, B la ve, acepta y ambos se tienen en la lista", async () =
   const resp = await B.send("ResponsesAddFriendC2S", { type: 0, auid: auid(A.p) });
   expect(resp[0].methodName).toBe("ResponsesAddFriendS2C");
   expect(resp[0].paramObject.res).toBe(0);
+  // el que acepta recibe en la misma respuesta el aviso que anade al amigo a su lista local (el cliente no lo hace solo)
+  expect(resp.find((f) => f.methodName === "NoticeUpdateFriendS2C")?.paramObject).toMatchObject({ type: 0, action: 0, f_auid: auid(A.p) });
 
   const la = await friendList(A);
   const lb = await friendList(B);

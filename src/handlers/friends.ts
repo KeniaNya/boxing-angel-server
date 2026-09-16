@@ -8,7 +8,10 @@
 //
 // Avisos push (NoticeUpdateFriendS2C / NoticeFriendGvieS2C): socket.ts no expone las sesiones de otros jugadores,
 // asi que se encolan en el ext del destinatario y se entregan con su siguiente mensaje de este dominio
-// (o al vaciar la cola con NoticeUpdateFriendC2S / NoticeFriendGvieC2S).
+// (o al vaciar la cola con NoticeUpdateFriendC2S / NoticeFriendGvieC2S). Al que ACEPTA una solicitud (o cierra una
+// amistad mutua) se le devuelve el aviso en la misma respuesta: el cliente solo anade el amigo a su lista local al
+// recibir NoticeUpdateFriend(type 0, action 0) (CSDataCenter.NoticeUpdateFriend); tras ResponsesAddFriendS2C res 0
+// unicamente quita la solicitud, asi que sin el aviso el nuevo amigo no aparecia hasta el siguiente login.
 
 import type { PlayerHandler, Frame } from "../game.ts";
 import { s2c, refreshAp, currentRole, findEquip } from "../economy.ts";
@@ -163,7 +166,7 @@ export const handlers: Record<string, PlayerHandler> = {
       link(p, q);
       pushNotice(q, s2c("NoticeUpdateFriendS2C", { type: 0, action: 0, ...friendData(p, q) }));
       log("AddFriendC2S: amistad mutua", p.name, "<->", q.name);
-      return reply(p, [s2c("AddFriendS2C", { res: R.OK })]);
+      return reply(p, [s2c("AddFriendS2C", { res: R.OK }), s2c("NoticeUpdateFriendS2C", { type: 0, action: 0, ...friendData(q, p) })]);
     }
     if (st(q).requests.length >= REQUEST_INBOX_MAX) return reply(p, [s2c("AddFriendS2C", { res: R.OTHER_FULL })]);
     st(q).requests.push(p.acc);
@@ -189,7 +192,7 @@ export const handlers: Record<string, PlayerHandler> = {
     link(p, q);
     pushNotice(q, s2c("NoticeUpdateFriendS2C", { type: 0, action: 0, ...friendData(p, q) }));
     log("ResponsesAddFriendC2S: aceptada", q.name, "<->", p.name);
-    return reply(p, [s2c("ResponsesAddFriendS2C", { res: R.OK })]);
+    return reply(p, [s2c("ResponsesAddFriendS2C", { res: R.OK }), s2c("NoticeUpdateFriendS2C", { type: 0, action: 0, ...friendData(q, p) })]);
   },
 
   // Borrar amigo (de ambas listas); el otro recibe NoticeUpdateFriend(type 0, action 1).
