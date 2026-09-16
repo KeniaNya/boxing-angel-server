@@ -9,7 +9,7 @@ const fmtSize = (n: number) => (n >= 1 << 20 ? `${(n / (1 << 20)).toFixed(1)} MB
 export type Lang = "en" | "es" | "ja";
 type Strings = {
   title: string; intro: string; online: string; maintenance: string;
-  downloads: string; apk: string; apk64: string; apk64Note: string; obb: string; apkMissing: string; obbMissing: string;
+  downloads: string; apk: string; apkNote: string; apk64: string; apk64Note: string; obb: string; apkMissing: string; obbMissing: string;
   install: string; requirements: string; step1: string; step2: string; step3: string;
   manualSummary: string; manualText: string;
   updates: string; news: string; langNote: string; notice: string; noticeText: string;
@@ -21,14 +21,14 @@ const T: Record<Lang, Strings> = {
     title: "Boxing Angel · community server",
     intro: "Unofficial, fan-run server for <i>Boxing Angel</i> (Mono Play, 2019), whose official servers shut down in July 2019. Status:",
     online: "online", maintenance: "under maintenance",
-    downloads: "Downloads", apk: "Game (APK) · recommended", apk64: "Game (APK) · 64-bit build, beta", apk64Note: "Only if the recommended APK will not install on your phone (64-bit-only devices such as Pixel 7 or newer and Galaxy S24 or newer). Rebuilt on a modern engine, still being polished. Everything is inside the APK: no OBB needed. It installs over the other APK and keeps your account.", obb: "Game data (OBB) · only for manual copy",
+    downloads: "Downloads", apk: "Game (APK) · legacy 32-bit build", apkNote: "Frozen build: it no longer gets updates. Use it only on phones that cannot run the recommended one (Android 5 and 6). It needs the game data (OBB, {size}), which it downloads by itself on the first run.", apk64: "Game (APK) · recommended", apk64Note: "The current build, and the only one that gets updates. Needs Android 7 or newer, on either 64-bit or 32-bit hardware. Everything is inside the APK: no OBB to download. It installs over any previous APK and keeps your account.", obb: "Game data (OBB) · only for the legacy APK",
     apkMissing: "The APK has not been published yet.", obbMissing: "The OBB file has not been published yet.",
     install: "Installing on Android",
-    requirements: "Needs an Android device that can run 32-bit apps (armeabi-v7a): Android 5 to 14 work, and so do most Android 15/16 phones. Devices that only support 64-bit apps (some recent Pixels) cannot install it.",
+    requirements: "Needs Android 7 (Nougat) or newer, on either 64-bit or 32-bit hardware. Only Android 5 and 6 phones need the legacy 32-bit APK above.",
     step1: "Download and install the <b>APK</b> (allow \"install unknown apps\" if the phone asks).",
-    step2: "Open the game with an internet connection. On the first run it downloads the game data ({size}) with a progress bar and restarts when done. Wi-Fi recommended.",
+    step2: "Open the game with an internet connection. It fetches the server configuration and shows the news; there is nothing else to download, everything is inside the APK.",
     step3: "When it reopens it fetches the server configuration, shows the news and reaches the login screen: tap <b>START</b>, then <b>Login</b> (a quick account is created on the phone; don't lose it by reinstalling).",
-    manualSummary: "Copy the game data manually (only if the automatic download fails)",
+    manualSummary: "Copy the game data manually (only for the legacy 32-bit APK)",
     manualText: "Download the <b>OBB</b> and copy it, with that exact name, to the internal storage folder <code>Android/obb/th.in.monogame.boxingangel/</code> (create it if needed). On Android 11 or newer the phone's file manager may block <code>Android/obb</code>: use a file manager with \"all files\" permission or a PC with a USB cable:",
     updates: "Updates: just install the new APK over the old one (same signature). The game data does not change. Server news: ",
     news: "news page",
@@ -41,14 +41,14 @@ const T: Record<Lang, Strings> = {
     title: "Boxing Angel · servidor comunitario",
     intro: "Servidor no oficial mantenido por fans para <i>Boxing Angel</i> (Mono Play, 2019), cuyos servidores oficiales cerraron en julio de 2019. Estado:",
     online: "en línea", maintenance: "en mantenimiento",
-    downloads: "Descargas", apk: "Juego (APK) · recomendado", apk64: "Juego (APK) · versión de 64 bits, beta", apk64Note: "Solo si el APK recomendado no se instala en tu teléfono (equipos que únicamente ejecutan apps de 64 bits, como Pixel 7 o posterior y Galaxy S24 o posterior). Reconstruido sobre un motor moderno, todavía en pulido. Todo va dentro del APK: no necesita OBB. Se instala encima del otro APK y conserva tu cuenta.", obb: "Datos del juego (OBB) · solo para copia manual",
+    downloads: "Descargas", apk: "Juego (APK) · versión antigua de 32 bits", apkNote: "Versión congelada: ya no recibe actualizaciones. Úsala solo en teléfonos que no puedan con la recomendada (Android 5 y 6). Necesita los datos del juego (OBB, {size}), que descarga sola en el primer arranque.", apk64: "Juego (APK) · recomendado", apk64Note: "La versión actual, y la única que recibe actualizaciones. Requiere Android 7 o superior, en equipos de 64 o de 32 bits. Todo va dentro del APK: no hay OBB que descargar. Se instala encima de cualquier APK anterior y conserva tu cuenta.", obb: "Datos del juego (OBB) · solo para el APK antiguo",
     apkMissing: "El APK aún no se ha publicado.", obbMissing: "El archivo OBB aún no se ha publicado.",
     install: "Instalación en Android",
-    requirements: "Requiere un Android que ejecute apps de 32 bits (armeabi-v7a): de Android 5 a 14 funciona, y también la mayoría de Android 15/16. Los teléfonos que solo admiten 64 bits (algunos Pixel recientes) no pueden instalarlo.",
+    requirements: "Requiere Android 7 (Nougat) o superior, en equipos de 64 o de 32 bits. Solo los teléfonos con Android 5 o 6 necesitan el APK antiguo de 32 bits de arriba.",
     step1: "Descarga e instala el <b>APK</b> (acepta \"instalar apps de origen desconocido\" si el teléfono lo pide).",
-    step2: "Abre el juego con internet. La primera vez descarga los datos del juego ({size}) mostrando el progreso y se reinicia al terminar. Mejor con wifi.",
+    step2: "Abre el juego con internet. Descarga la configuración del servidor y muestra las noticias; no hay nada más que bajar, todo va dentro del APK.",
     step3: "Al volver a abrirse descarga la configuración del servidor, muestra las noticias y llega al login: pulsa <b>START</b> y luego <b>Login</b> (se crea una cuenta rápida en el teléfono; no la pierdas reinstalando).",
-    manualSummary: "Copiar los datos a mano (solo si la descarga automática falla)",
+    manualSummary: "Copiar los datos a mano (solo para el APK antiguo de 32 bits)",
     manualText: "Descarga el <b>OBB</b> y cópialo, con ese nombre exacto, a la carpeta del almacenamiento interno <code>Android/obb/th.in.monogame.boxingangel/</code> (créala si no existe). En Android 11 o superior el explorador del teléfono puede bloquear <code>Android/obb</code>: usa un explorador con permiso de \"todos los archivos\" o un PC con cable:",
     updates: "Actualizaciones: basta instalar el APK nuevo encima del anterior (misma firma). Los datos del juego no cambian. Noticias del servidor: ",
     news: "página de noticias",
@@ -61,14 +61,14 @@ const T: Record<Lang, Strings> = {
     title: "Boxing Angel · コミュニティサーバー",
     intro: "2019年7月に公式サーバーが終了した<i>ボクシングエンジェル</i>（Mono Play、2019年）を、ファンが非公式に運営しているサーバーです。状態：",
     online: "稼働中", maintenance: "メンテナンス中",
-    downloads: "ダウンロード", apk: "ゲーム本体（APK）・推奨", apk64: "ゲーム本体（APK）・64ビット版、ベータ", apk64Note: "推奨APKがインストールできない端末（Pixel 7以降やGalaxy S24以降など64ビット専用機）のみ。新しいエンジンで再構築した、調整中のビルドです。データはすべてAPKに含まれ、OBBは不要です。もう一方のAPKの上に上書きインストールでき、アカウントは引き継がれます。", obb: "ゲームデータ（OBB）・手動コピー用",
+    downloads: "ダウンロード", apk: "ゲーム本体（APK）・旧32ビット版", apkNote: "更新を終了したビルドです。推奨版が動かない端末（Android 5・6）でのみ使用してください。ゲームデータ（OBB、{size}）が必要で、初回起動時に自動でダウンロードします。", apk64: "ゲーム本体（APK）・推奨", apk64Note: "現行ビルドで、今後の更新はこちらだけに入ります。Android 7以降が必要です（64ビット・32ビットのどちらの端末でも動作します）。データはすべてAPKに含まれ、OBBのダウンロードは不要です。以前のAPKの上に上書きインストールでき、アカウントは引き継がれます。", obb: "ゲームデータ（OBB）・旧APK専用",
     apkMissing: "APKはまだ公開されていません。", obbMissing: "OBBファイルはまだ公開されていません。",
     install: "Androidへのインストール",
-    requirements: "32ビットアプリ（armeabi-v7a）を実行できるAndroid端末が必要です。Android 5〜14で動作し、Android 15/16の多くの端末でも動作します。64ビットアプリしか動かない端末（一部の新しいPixelなど）にはインストールできません。",
+    requirements: "Android 7（Nougat）以降が必要です（64ビット・32ビットのどちらの端末でも動作します）。上の旧32ビット版APKが必要なのはAndroid 5・6の端末だけです。",
     step1: "<b>APK</b>をダウンロードしてインストールします（「提供元不明のアプリ」の許可を求められたら許可してください）。",
-    step2: "インターネットに接続した状態でゲームを起動します。初回のみゲームデータ（{size}）を進捗バー付きでダウンロードし、完了後に自動で再起動します。Wi-Fi推奨です。",
+    step2: "インターネットに接続した状態でゲームを起動します。サーバー設定を取得してお知らせを表示します。データはすべてAPKに含まれているため、追加のダウンロードはありません。",
     step3: "再起動後はサーバー設定を取得し、お知らせを表示してログイン画面になります。<b>START</b>、続いて<b>Login</b>をタップしてください（端末にクイックアカウントが作られます。再インストールすると失われるので注意）。",
-    manualSummary: "ゲームデータを手動でコピーする（自動ダウンロードが失敗した場合のみ）",
+    manualSummary: "ゲームデータを手動でコピーする（旧32ビット版APKのみ）",
     manualText: "<b>OBB</b>をダウンロードし、ファイル名をそのままに内部ストレージの<code>Android/obb/th.in.monogame.boxingangel/</code>にコピーします（フォルダがなければ作成）。Android 11以降では端末のファイルマネージャーが<code>Android/obb</code>をブロックすることがあります。「すべてのファイル」権限のあるファイルマネージャーか、USBケーブルでPCから行ってください：",
     updates: "アップデート：新しいAPKを上書きインストールするだけです（同じ署名）。ゲームデータは変わりません。サーバーのお知らせ：",
     news: "お知らせページ",
@@ -118,9 +118,9 @@ a{color:#ff9ad0}footer{margin-top:40px;color:#7f6fa8;font-size:12px}
 <p class="note">${t.langNote}</p>
 
 <h2>${escapeHtml(t.downloads)}</h2>
-${apk ? row(apk, t.apk) : `<p class="warn">${escapeHtml(t.apkMissing)}</p>`}
+${apk64 ? row(apk64, t.apk64) + `<p class="note">${escapeHtml(t.apk64Note)}</p>` : `<p class="warn">${escapeHtml(t.apkMissing)}</p>`}
+${apk ? row(apk, t.apk) + `<p class="note">${escapeHtml(t.apkNote.replace("{size}", obb ? fmtSize(obb.size) : "153 MB"))}</p>` : ""}
 ${obb ? row(obb, t.obb) : `<p class="warn">${escapeHtml(t.obbMissing)}</p>`}
-${apk64 ? row(apk64, t.apk64) + `<p class="note">${escapeHtml(t.apk64Note)}</p>` : ""}
 ${files.filter((f) => f !== apk && f !== apk64 && f !== obb).map((f) => row(f, f.name)).join("")}
 
 <h2>${escapeHtml(t.install)}</h2>
