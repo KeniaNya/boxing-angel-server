@@ -360,4 +360,4 @@ AsnRankUsedSkill	Use skills
 AsnBattleCount1	people
 startWishPoolGacha_1	There are no events.
 startWishPoolGacha_2	Event Error
-帳號綁定	Bind account
+Setting_AccountBinding	Bind account
