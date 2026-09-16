@@ -30,12 +30,12 @@ test("vincular una cuenta rapida conserva el personaje y permite entrar con el n
   const { p } = await testSession(fast); // le crea personaje con la clave de datos = nombre rapido
   p.name = "Recuperable";
 
-  expect(bindAccount(fast, "pwdfast", "jugador.uno", "secreto1", 1)).toBe(0);
+  expect(bindAccount(fast, "pwdfast", "jugadoruno", "secreto1", 1)).toBe(0);
 
   // El nombre viejo ya no vale y el nuevo entra al MISMO personaje.
   expect(verifyAccount(fast, "pwdfast").res).toBe(1005);
-  expect(playerKey("jugador.uno")).toBe(fast);
-  const { res, frames, session } = await login("jugador.uno", "secreto1");
+  expect(playerKey("jugadoruno")).toBe(fast);
+  const { res, frames, session } = await login("jugadoruno", "secreto1");
   expect(res).toBe(0);
   expect(frames.some((f) => f.methodName === "LoginS2C" && f.paramObject.res === 0)).toBe(true);
   expect(session.acc).toBe(fast); // los datos siguen bajo la clave original
@@ -46,32 +46,32 @@ test("una sesion abierta sobrevive a la vinculacion (se vincula jugando)", async
   const fast = fresh();
   createAccount(fast, "pwdfast", 0);
   const token = verifyAccount(fast, "pwdfast").token!;
-  expect(bindAccount(fast, "pwdfast", "enjuego.uno", "secreto1", 1)).toBe(0);
+  expect(bindAccount(fast, "pwdfast", "enjuegouno", "secreto1", 1)).toBe(0);
   const sess = resolveToken(token)!;
-  expect(sess.acc).toBe("enjuego.uno"); // LoginC2S compara con el nombre que ya usa el cliente
+  expect(sess.acc).toBe("enjuegouno"); // LoginC2S compara con el nombre que ya usa el cliente
   expect(sess.key).toBe(fast);
 });
 
 test("codigos de error de la vinculacion (los que el cliente localiza como Binding_<res>)", () => {
   const fast = fresh();
   createAccount(fast, "pwdfast", 0);
-  expect(bindAccount("no-existe", "pwdfast", "libre.uno", "secreto1", 1)).toBe(1005);
-  expect(bindAccount(fast, "mala-clave", "libre.uno", "secreto1", 1)).toBe(1005);
+  expect(bindAccount("no-existe", "pwdfast", "libreuno", "secreto1", 1)).toBe(1005);
+  expect(bindAccount(fast, "mala-clave", "libreuno", "secreto1", 1)).toBe(1005);
   expect(bindAccount(fast, "pwdfast", "corto", "secreto1", 1)).toBe(1003); // nombre < 6
-  expect(bindAccount(fast, "pwdfast", "libre.uno", "corto", 1)).toBe(1003); // clave < 6
-  expect(bindAccount(fast, "pwdfast", "libre.uno", "secreto1", 1)).toBe(0);
+  expect(bindAccount(fast, "pwdfast", "libreuno", "corto", 1)).toBe(1003); // clave < 6
+  expect(bindAccount(fast, "pwdfast", "libreuno", "secreto1", 1)).toBe(0);
   // Ya vinculada: no se puede volver a vincular, y su nombre queda ocupado.
-  expect(bindAccount("libre.uno", "secreto1", "otro.nombre", "secreto2", 1)).toBe(1008);
+  expect(bindAccount("libreuno", "secreto1", "otronombre", "secreto2", 1)).toBe(1008);
   const otra = fresh();
   createAccount(otra, "pwdfast", 0);
-  expect(bindAccount(otra, "pwdfast", "libre.uno", "secreto1", 1)).toBe(1008);
+  expect(bindAccount(otra, "pwdfast", "libreuno", "secreto1", 1)).toBe(1008);
 });
 
 test("el nombre rapido viejo no se puede reutilizar: seguiria siendo el archivo del personaje", async () => {
   const fast = fresh();
   createAccount(fast, "pwdfast", 0);
   await testSession(fast);
-  expect(bindAccount(fast, "pwdfast", "sinrobo.uno", "secreto1", 1)).toBe(0);
+  expect(bindAccount(fast, "pwdfast", "sinrobouno", "secreto1", 1)).toBe(0);
   // El nombre rapido quedo libre en el mapa de cuentas, pero sigue siendo data/players/<fast>.json
   expect(createAccount(fast, "otraclave", 0)).toBe(1008);
   const otro = fresh();
@@ -87,11 +87,11 @@ test("el panel puede dar credenciales nuevas a una cuenta perdida sin tocar el p
 
   const r = await handleAdmin("/admin/api/accounts/" + encodeURIComponent(fast) + "/login",
     new Request("http://x/", { method: "POST", headers: { authorization: "Bearer t", "content-type": "application/json" },
-      body: JSON.stringify({ acc: "rescatado.uno", pwd: "nueva123" }) }), { startedAt: new Date() });
+      body: JSON.stringify({ acc: "rescatadou", pwd: "nueva123" }) }), { startedAt: new Date() });
   expect(r.status).toBe(200);
 
-  const { session } = await login("rescatado.uno", "nueva123");
+  const { session } = await login("rescatadou", "nueva123");
   expect(session.acc).toBe(fast);
   expect(loadPlayer(session.acc!)!.name).toBe("Perdido");
-  expect(setAccountLogin("rescatado.uno", "mal", "nueva123")).toBe(1003);
+  expect(setAccountLogin("rescatadou", "mal", "nueva123")).toBe(1003);
 });

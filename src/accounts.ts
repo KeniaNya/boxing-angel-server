@@ -51,6 +51,16 @@ function hashPassword(pwd: string, salt: string): string {
 
 export const ACC_RE = /^[A-Za-z0-9_.@-]{6,64}$/;
 
+/**
+ * Lo que el jugador puede TECLEAR de verdad en el juego: los UIInput de las pantallas de cuenta llevan
+ * `Validation.Alphanumeric` y `characterLimit: 12`, asi que solo entran letras y digitos, maximo 12.
+ * (El propio panel del juego lo avisa: "The maximum length of account name and passwords is 12 characters".)
+ * ACC_RE es mas permisiva a proposito, para no invalidar cuentas ya creadas; esta es la que hay que usar
+ * cuando las credenciales las elige una persona (el rescate del panel), o le daremos al jugador un nombre
+ * que no puede escribir.
+ */
+export const TYPEABLE_RE = /^[A-Za-z0-9]{6,12}$/;
+
 /** Clave de datos de una cuenta (ver Account.key). Para cuentas no vinculadas es el propio nombre. */
 export function playerKey(acc: string): string {
   return accounts.get(acc)?.key ?? acc;
@@ -132,7 +142,8 @@ export function bindAccount(fastAcc: string, fastPwd: string, newAcc: string, ne
 export function setAccountLogin(acc: string, newAcc: string, newPwd: string): number {
   const a = accounts.get(acc);
   if (!a) return HTTP_NO_ACCOUNT;
-  if (!ACC_RE.test(newAcc) || newPwd.length < 6 || newPwd.length > 128) return HTTP_WRONG_DATA;
+  // Aqui elige una persona, asi que se exige lo que el cliente deja teclear (ver TYPEABLE_RE).
+  if (!TYPEABLE_RE.test(newAcc) || !TYPEABLE_RE.test(newPwd)) return HTTP_WRONG_DATA;
   if (newAcc !== acc && newAcc !== (a.key ?? a.acc) && nameTaken(newAcc)) return HTTP_ACCOUNT_TAKEN;
   renameLogin(a, newAcc, newPwd, a.type === 0 ? 1 : a.type);
   save();

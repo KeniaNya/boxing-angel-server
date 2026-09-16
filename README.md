@@ -65,6 +65,12 @@ PvP y el correo; solo cambian el nombre de acceso y la contrasena. Por eso una `
 cosas: `acc` (el nombre que el cliente escribe, lo que comprueba `LoginC2S`) y `key` (el jugador que se
 carga). Las sesiones abiertas siguen valiendo, asi que se puede vincular en mitad de la partida.
 
+**Limite del cliente**: los `UIInput` de las pantallas de cuenta son `Validation.Alphanumeric` con
+`characterLimit: 12`, asi que el jugador solo puede teclear **letras y numeros, de 6 a 12 caracteres**, tanto
+en la cuenta como en la contrasena. De ahi las dos reglas de `accounts.ts`: `ACC_RE` (permisiva, para no
+invalidar cuentas ya creadas) y `TYPEABLE_RE`, que es la que se exige cuando las credenciales las elige una
+persona (el rescate del panel) para no darle al jugador un nombre que no puede escribir.
+
 Para quien ya perdio una cuenta rapida sin vincularla: panel `/admin` -> Jugadores (columna "Acceso")
 para dar con su cuenta, y `/admin` -> Cuentas -> **Credenciales** para darle un usuario y una clave
 nuevos conservando el personaje (`POST /admin/api/accounts/<acc>/login`).

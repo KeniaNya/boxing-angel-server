@@ -261,7 +261,7 @@
 <section id="tab-accounts">
   <h2>Cuentas del login</h2>
   <p class="msg">Tipo 0 = cuenta rápida (creada con "Fast Login": nombre y contraseña aleatorios que solo viven en el teléfono). Tipo 1 = cuenta vinculada o registrada, la que se puede recuperar tras desinstalar.</p>
-  <p class="msg">"Credenciales" le da a una cuenta un nombre y una contraseña nuevos <b>sin tocar el personaje</b>: es el rescate para quien perdió una cuenta rápida antes de vincularla (búscalo por el nombre del personaje en Jugadores). Borrar una cuenta elimina también su personaje.</p>
+  <p class="msg">"Credenciales" le da a una cuenta un nombre y una contraseña nuevos <b>sin tocar el personaje</b>: es el rescate para quien perdió una cuenta rápida antes de vincularla (búscalo por el nombre del personaje en Jugadores). Ojo: el juego solo deja teclear <b>letras y números, de 6 a 12 caracteres</b>, en la cuenta y en la contraseña. Borrar una cuenta elimina también su personaje.</p>
   <table id="accounts-table"><thead><tr><th>Cuenta</th><th>Tipo</th><th>Personaje (clave)</th><th>Creada</th><th>Último login</th><th></th></tr></thead><tbody></tbody></table>
 </section>
 
@@ -501,9 +501,9 @@ function deletePlayer() {
     .catch(function (e) { msg('pd-msg', e.message, 'err'); });
 }
 function setLogin(acc) {
-  var nuevo = prompt('Nombre de acceso nuevo para ' + acc + ' (6-64 caracteres: letras, numeros, . _ - @).\nEl personaje no se toca.', acc);
+  var nuevo = prompt('Nombre de acceso nuevo para ' + acc + '.\nEl juego solo deja teclear LETRAS Y NUMEROS, de 6 a 12 caracteres.\nEl personaje no se toca.', acc);
   if (!nuevo) return;
-  var pwd = prompt('Contrasena nueva para ' + nuevo + ' (6 caracteres o mas).');
+  var pwd = prompt('Contrasena nueva para ' + nuevo + ' (letras y numeros, de 6 a 12).');
   if (!pwd) return;
   api('accounts/' + encodeURIComponent(acc) + '/login', { method: 'POST', body: { acc: nuevo, pwd: pwd } })
     .then(function (r) { alert('Listo. El jugador entra con:\n\ncuenta: ' + r.acc + '\nclave: ' + pwd + '\n\nEn el juego: boton \"Login\" de la pantalla de cuentas.'); loadAccounts(); loadPlayers(); })

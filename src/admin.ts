@@ -125,7 +125,7 @@ export async function handleAdmin(path: string, req: Request, ctx: Ctx): Promise
       const newPwd = String(b.pwd ?? "");
       const res = setAccountLogin(acc, newAcc, newPwd);
       if (res === 1005) return fail("cuenta no encontrada", 404);
-      if (res === 1003) return fail("nombre de 6-64 caracteres (letras, numeros, . _ - @) y contrasena de 6 o mas");
+      if (res === 1003) return fail("el juego solo deja teclear letras y numeros, de 6 a 12 caracteres: tanto la cuenta como la contrasena");
       if (res === 1008) return fail("ese nombre de acceso ya esta en uso");
       log("admin: credenciales cambiadas", acc, "->", newAcc);
       return json({ ok: true, acc: newAcc });
