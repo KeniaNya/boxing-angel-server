@@ -10,7 +10,7 @@ export type Lang = "en" | "es" | "ja";
 type Strings = {
   title: string; intro: string; online: string; maintenance: string;
   downloads: string; apk: string; apkNote: string; apk64: string; apk64Note: string; obb: string; apkMissing: string; obbMissing: string;
-  install: string; requirements: string; step1: string; step2: string; step3: string;
+  install: string; requirements: string; step1: string; step2: string; step3: string; step4: string;
   manualSummary: string; manualText: string;
   updates: string; news: string; langNote: string; notice: string; noticeText: string;
   langLabel: string;
@@ -27,7 +27,8 @@ const T: Record<Lang, Strings> = {
     requirements: "Needs Android 7 (Nougat) or newer, on either 64-bit or 32-bit hardware. Only Android 5 and 6 phones need the legacy 32-bit APK above.",
     step1: "Download and install the <b>APK</b> (allow \"install unknown apps\" if the phone asks).",
     step2: "Open the game with an internet connection. It fetches the server configuration and shows the news; there is nothing else to download, everything is inside the APK.",
-    step3: "When it reopens it fetches the server configuration, shows the news and reaches the login screen: tap <b>START</b>, then <b>Login</b> (a quick account is created on the phone; don't lose it by reinstalling).",
+    step3: "When it reopens it fetches the server configuration, shows the news and reaches the login screen: tap <b>START</b>, then <b>Fast Login</b> to start playing right away, or <b>Register</b> to pick your own name and password.",
+    step4: "<b>Protect your character.</b> A fast account lives only on this phone: if you uninstall the game or change phone, it is gone. Open <b>Settings</b> (tap your name at the top) and choose <b>Binding</b> to give it a name and a password of your own — letters and numbers, 6 to 12 characters. After that you can log in on any phone with <b>Login</b>, and your gym and everything in it come back.",
     manualSummary: "Copy the game data manually (only for the legacy 32-bit APK)",
     manualText: "Download the <b>OBB</b> and copy it, with that exact name, to the internal storage folder <code>Android/obb/th.in.monogame.boxingangel/</code> (create it if needed). On Android 11 or newer the phone's file manager may block <code>Android/obb</code>: use a file manager with \"all files\" permission or a PC with a USB cable:",
     updates: "Updates: just install the new APK over the old one (same signature). The game data does not change. Server news: ",
@@ -47,7 +48,8 @@ const T: Record<Lang, Strings> = {
     requirements: "Requiere Android 7 (Nougat) o superior, en equipos de 64 o de 32 bits. Solo los teléfonos con Android 5 o 6 necesitan el APK antiguo de 32 bits de arriba.",
     step1: "Descarga e instala el <b>APK</b> (acepta \"instalar apps de origen desconocido\" si el teléfono lo pide).",
     step2: "Abre el juego con internet. Descarga la configuración del servidor y muestra las noticias; no hay nada más que bajar, todo va dentro del APK.",
-    step3: "Al volver a abrirse descarga la configuración del servidor, muestra las noticias y llega al login: pulsa <b>START</b> y luego <b>Login</b> (se crea una cuenta rápida en el teléfono; no la pierdas reinstalando).",
+    step3: "Al volver a abrirse descarga la configuración del servidor, muestra las noticias y llega al login: pulsa <b>START</b> y luego <b>Fast Login</b> para empezar a jugar ya, o <b>Register</b> para elegir tú el usuario y la contraseña.",
+    step4: "<b>Protege tu personaje.</b> Una cuenta rápida solo existe en ese teléfono: si desinstalas el juego o cambias de móvil, la pierdes. Entra en <b>Settings</b> (pulsa tu nombre arriba) y elige <b>Binding</b> para ponerle un usuario y una contraseña tuyos — letras y números, de 6 a 12 caracteres. A partir de ahí puedes entrar desde cualquier teléfono con <b>Login</b> y recuperas tu gimnasio con todo.",
     manualSummary: "Copiar los datos a mano (solo para el APK antiguo de 32 bits)",
     manualText: "Descarga el <b>OBB</b> y cópialo, con ese nombre exacto, a la carpeta del almacenamiento interno <code>Android/obb/th.in.monogame.boxingangel/</code> (créala si no existe). En Android 11 o superior el explorador del teléfono puede bloquear <code>Android/obb</code>: usa un explorador con permiso de \"todos los archivos\" o un PC con cable:",
     updates: "Actualizaciones: basta instalar el APK nuevo encima del anterior (misma firma). Los datos del juego no cambian. Noticias del servidor: ",
@@ -67,7 +69,8 @@ const T: Record<Lang, Strings> = {
     requirements: "Android 7（Nougat）以降が必要です（64ビット・32ビットのどちらの端末でも動作します）。上の旧32ビット版APKが必要なのはAndroid 5・6の端末だけです。",
     step1: "<b>APK</b>をダウンロードしてインストールします（「提供元不明のアプリ」の許可を求められたら許可してください）。",
     step2: "インターネットに接続した状態でゲームを起動します。サーバー設定を取得してお知らせを表示します。データはすべてAPKに含まれているため、追加のダウンロードはありません。",
-    step3: "再起動後はサーバー設定を取得し、お知らせを表示してログイン画面になります。<b>START</b>、続いて<b>Login</b>をタップしてください（端末にクイックアカウントが作られます。再インストールすると失われるので注意）。",
+    step3: "再起動後はサーバー設定を取得し、お知らせを表示してログイン画面になります。<b>START</b>をタップし、すぐ遊ぶなら<b>Fast Login</b>、自分でIDとパスワードを決めるなら<b>Register</b>を選んでください。",
+    step4: "<b>キャラクターを守りましょう。</b>クイックアカウントはその端末にしか残りません。アンインストールしたり機種変更すると失われます。<b>Settings</b>（上部の名前をタップ）から<b>Binding</b>を選び、自分のIDとパスワード（半角英数字6〜12文字）を設定してください。以降はどの端末からでも<b>Login</b>で入れて、ジムもそのまま戻ります。",
     manualSummary: "ゲームデータを手動でコピーする（旧32ビット版APKのみ）",
     manualText: "<b>OBB</b>をダウンロードし、ファイル名をそのままに内部ストレージの<code>Android/obb/th.in.monogame.boxingangel/</code>にコピーします（フォルダがなければ作成）。Android 11以降では端末のファイルマネージャーが<code>Android/obb</code>をブロックすることがあります。「すべてのファイル」権限のあるファイルマネージャーか、USBケーブルでPCから行ってください：",
     updates: "アップデート：新しいAPKを上書きインストールするだけです（同じ署名）。ゲームデータは変わりません。サーバーのお知らせ：",
@@ -129,6 +132,7 @@ ${files.filter((f) => f !== apk && f !== apk64 && f !== obb).map((f) => row(f, f
 <li>${t.step1}</li>
 <li>${t.step2.replace("{size}", obb ? fmtSize(obb.size) : "153 MB")}</li>
 <li>${t.step3}</li>
+<li>${t.step4}</li>
 </ol>
 <details><summary class="muted">${escapeHtml(t.manualSummary)}</summary>
 <p class="muted">${t.manualText}</p><pre>adb shell mkdir -p /sdcard/Android/obb/th.in.monogame.boxingangel
