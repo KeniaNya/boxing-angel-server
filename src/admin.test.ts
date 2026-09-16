@@ -62,3 +62,20 @@ test("admin: borrar personaje y cuenta", async () => {
   const r2 = await call("DELETE", "/admin/api/players/" + encodeURIComponent(p.acc));
   expect(r2.status).toBe(404);
 });
+
+test("admin: actualizacion del cliente (config + /api/client-version)", async () => {
+  const { updateConfig, clientVersionInfo } = await import("./config.ts");
+  const r = await call("PUT", "/admin/api/config", { clientUpdate: { latestVersionCode: 2026091609, minVersionCode: 2026091601, notes: "Piezas y Patch" } });
+  expect(r.status).toBe(200);
+  const info = clientVersionInfo("http://x", [{ name: "boxing-angel-64bit.apk", size: 5, sha256: "abc" }]);
+  expect(info.latestVersionCode).toBe(2026091609);
+  expect(info.minVersionCode).toBe(2026091601);
+  expect(info.url).toBe("http://x/download/boxing-angel-64bit.apk");
+  expect(info.sha256).toBe("abc");
+  expect(info.notes).toBe("Piezas y Patch");
+  // sin archivo publicado: enlace igual, sin tamano ni hash
+  expect(clientVersionInfo("http://x", []).sha256).toBeNull();
+  expect(() => updateConfig({ clientUpdate: { minVersionCode: 2026099999 } as never })).toThrow();
+  expect(() => updateConfig({ clientUpdate: { file: "../x" } as never })).toThrow();
+  updateConfig({ clientUpdate: { latestVersionCode: 0, minVersionCode: 0 } as never });
+});

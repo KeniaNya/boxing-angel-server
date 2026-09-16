@@ -361,3 +361,8 @@ AsnBattleCount1	people
 startWishPoolGacha_1	There are no events.
 startWishPoolGacha_2	Event Error
 Setting_AccountBinding	Bind account
+BAUpdate_Available	A new version of Boxing Angel is available (build {1}, you have {0}). Download the new APK from: {2}
+BAUpdate_Required	This version of Boxing Angel is too old to play (build {0}). Please download the new APK (build {1}) from: {2}
+BAUpdate_Update	Update
+BAUpdate_Later	Later
+BAUpdate_Exit	Exit

@@ -6,10 +6,10 @@
 
 import { settingsZip, bundleDatabaseList, dynamicTables, type SettingsConfig, gameConfigJson } from "./settings.ts";
 import { loadHandlerModules } from "./game.ts";
-import { config, onConfigChange, newsHtml } from "./config.ts";
+import { config, onConfigChange, newsHtml, clientVersionInfo } from "./config.ts";
 import { handleAdmin } from "./admin.ts";
 import { publicHtml, pickLang } from "./public.ts";
-import { serveFile } from "./files.ts";
+import { serveFile, listFiles } from "./files.ts";
 import { log } from "./logbuf.ts";
 import { createAccount, verifyAccount, bindAccount, loadAccounts, accountCount, HTTP_WRONG_DATA } from "./accounts.ts";
 import { handleSocket, sessionCount } from "./socket.ts";
@@ -159,6 +159,11 @@ const server = Bun.serve({
 
     if (p === "/api/health") {
       return json({ ok: true, startedAt, uptimeSeconds: Math.round((Date.now() - startedAt.getTime()) / 1000), accounts: accountCount(), sessions: sessionCount(), live: liveStatus(), connection: config().connection, host: HOST });
+    }
+
+    // Comprobador de actualizaciones del port (BAUpdateCheck.cs): publico, sin token.
+    if (p === "/api/client-version") {
+      return json(clientVersionInfo(BASE_URL, listFiles()));
     }
 
     if (p === "/" || p === "/index.html") {

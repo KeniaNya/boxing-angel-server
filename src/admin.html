@@ -122,6 +122,14 @@
   <h3>Mantenimiento</h3>
   <p class="msg">Si escribes un mensaje, el login HTTP se rechaza y el cliente lo muestra. Déjalo vacío para abrir el servidor.</p>
   <input type="text" id="cfg-maintenance" placeholder="(vacío = servidor abierto)">
+  <h3>Actualización del cliente (APK de 64 bits)</h3>
+  <p class="msg">El juego consulta <code>/api/client-version</code> al llegar al login. Si su <b>versionCode</b> es menor que el publicado, ofrece descargar el APK nuevo ("Update" abre el enlace de Descargas); si es menor que el mínimo, no deja seguir sin actualizar. 0 = desactivado. <code>publish-downloads.ps1 -VersionCode N</code> rellena esto solo.</p>
+  <div class="row">
+    <label>versionCode publicado <input type="number" id="cfg-upd-latest" min="0" step="1"></label>
+    <label>versionCode mínimo (obligatorio) <input type="number" id="cfg-upd-min" min="0" step="1"></label>
+    <label>Archivo de Descargas <input type="text" id="cfg-upd-file" placeholder="boxing-angel-64bit.apk"></label>
+  </div>
+  <input type="text" id="cfg-upd-notes" placeholder="Novedades que ve el jugador (opcional)">
   <div class="actions"><button class="btn" onclick="saveConfig()">Guardar</button><span class="msg" id="cfg-msg"></span></div>
 </section>
 
@@ -354,6 +362,9 @@ function loadConfig() {
     ['showTutorial', 'isNPC', 'isStory', 'isPVP', 'sexySystem'].forEach(function (k) { $('cfg-' + k).checked = !!c.flags[k]; });
     openConfigured = c.openChapters; renderOpenChapters();
     $('cfg-maintenance').value = c.maintenance || '';
+    var u = c.clientUpdate || {};
+    $('cfg-upd-latest').value = u.latestVersionCode || 0; $('cfg-upd-min').value = u.minVersionCode || 0;
+    $('cfg-upd-file').value = u.file || ''; $('cfg-upd-notes').value = u.notes || '';
     $('news-title').value = c.news.title; $('news-body').value = c.news.body;
   });
 }
@@ -364,6 +375,7 @@ function saveConfig() {
     flags: { showTutorial: $('cfg-showTutorial').checked ? 1 : 0, isNPC: $('cfg-isNPC').checked ? 1 : 0, isStory: $('cfg-isStory').checked ? 1 : 0, isPVP: $('cfg-isPVP').checked ? 1 : 0, sexySystem: $('cfg-sexySystem').checked ? 1 : 0 },
     openChapters: $('cfg-openAuto').checked ? [] : Array.prototype.map.call(document.querySelectorAll('#cfg-openList input:checked'), function (x) { return x.value; }),
     maintenance: $('cfg-maintenance').value,
+    clientUpdate: { latestVersionCode: Number($('cfg-upd-latest').value), minVersionCode: Number($('cfg-upd-min').value), file: $('cfg-upd-file').value || 'boxing-angel-64bit.apk', notes: $('cfg-upd-notes').value },
   };
   api('config', { method: 'PUT', body: patch }).then(function () { msg('cfg-msg', 'Guardado', 'ok'); loadStatus(); })
     .catch(function (e) { msg('cfg-msg', e.message, 'err'); });

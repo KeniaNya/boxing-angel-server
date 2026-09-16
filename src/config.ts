@@ -32,6 +32,20 @@ export type ServerConfig = {
   maintenance: string;
   /** Parametros de economia que no vienen de las tablas del juego (editables desde el panel) */
   economy: Economy;
+  /** Actualizacion del cliente (port de 64 bits): el juego consulta /api/client-version al llegar al login y, si su
+   *  versionCode es menor que latestVersionCode, ofrece descargar el APK nuevo; si es menor que minVersionCode, obliga. */
+  clientUpdate: ClientUpdate;
+};
+
+export type ClientUpdate = {
+  /** versionCode del APK publicado (0 = sin comprobacion) */
+  latestVersionCode: number;
+  /** versionCode minimo para jugar (0 = nunca obligar) */
+  minVersionCode: number;
+  /** nombre del archivo en Descargas (data/downloads) del que se saca el enlace, tamano y SHA-256 */
+  file: string;
+  /** texto corto que ve el jugador (novedades) */
+  notes: string;
 };
 
 export type Economy = {
@@ -120,7 +134,24 @@ export const DEFAULTS: ServerConfig = {
     pvpWinDiamonds: 15,
     levelUpDiamonds: 25,
   },
+  clientUpdate: { latestVersionCode: 0, minVersionCode: 0, file: "boxing-angel-64bit.apk", notes: "" },
 };
+
+/** Lo que responde GET /api/client-version (publico): version publicada + enlace, tamano y SHA-256 del APK. */
+export function clientVersionInfo(baseUrl: string, files: { name: string; size: number; sha256: string | null }[]) {
+  const u = config().clientUpdate;
+  const f = files.find((x) => x.name === u.file);
+  return {
+    latestVersionCode: u.latestVersionCode,
+    minVersionCode: u.minVersionCode,
+    file: u.file,
+    url: `${baseUrl}/download/${encodeURIComponent(u.file)}`,
+    page: `${baseUrl}/`,
+    size: f?.size ?? null,
+    sha256: f?.sha256 ?? null,
+    notes: u.notes,
+  };
+}
 
 /** Precio en diamantes de un personaje: el del panel si esta fijado, si no el de role_info. Los gratuitos (precio 0) siguen gratis. */
 export function rolePriceDiamonds(tablePrice: number): number {
@@ -152,6 +183,7 @@ function merge(base: ServerConfig, patch: Partial<ServerConfig>): ServerConfig {
   out.economy = { ...base.economy, ...(patch.economy ?? {}) };
   out.economy.gachaWeights = { ...base.economy.gachaWeights, ...(patch.economy?.gachaWeights ?? {}) };
   out.economy.welcomeMail = { ...base.economy.welcomeMail, ...(patch.economy?.welcomeMail ?? {}) };
+  out.clientUpdate = { ...base.clientUpdate, ...(patch.clientUpdate ?? {}) };
   return out;
 }
 
@@ -205,7 +237,20 @@ export function updateConfig(patch: Partial<ServerConfig>): ServerConfig {
   }
   if (patch.maintenance !== undefined) p.maintenance = String(patch.maintenance).slice(0, 500);
   if (patch.economy) p.economy = validateEconomy(patch.economy);
-
+  if (patch.clientUpdate) {
+    const cur = config().clientUpdate, u = patch.clientUpdate;
+    const out: ClientUpdate = { ...cur };
+    if (u.latestVersionCode !== undefined) out.latestVersionCode = num(u.latestVersionCode, "latestVersionCode", 0, 9_999_999_999);
+    if (u.minVersionCode !== undefined) out.minVersionCode = num(u.minVersionCode, "minVersionCode", 0, 9_999_999_999);
+    if (u.file !== undefined) {
+      const f = String(u.file).trim();
+      if (!/^[A-Za-z0-9._-]{1,80}$/.test(f)) throw new Error("clientUpdate.file: nombre de archivo invalido");
+      out.file = f;
+    }
+    if (u.notes !== undefined) out.notes = String(u.notes).replace(/\r/g, "").slice(0, 300);
+    if (out.minVersionCode > out.latestVersionCode && out.latestVersionCode > 0) throw new Error("minVersionCode no puede ser mayor que latestVersionCode");
+    p.clientUpdate = out;
+  }
   current = merge(config(), p);
   mkdirSync(join(APPDATA, "data"), { recursive: true });
   writeFileSync(FILE + ".tmp", JSON.stringify(current, null, 2));
