@@ -5455,3 +5455,11 @@
 9305690	Cat Boots (different color) fragments
 9306680	Devil Head Fragment
 9306687	Cat headband fragments
+9002675	Christmas dress (white) [eb3030][set][-]
+9003666	Christmas Gloves (white) [eb3030][set][-]
+9005667	Christmas boots (white) [eb3030][set][-]
+9006668	Christmas hat (white) [eb3030][set][-]
+9302675	Christmas dress (white) fragments
+9303666	Christmas Gloves (white) fragments
+9305667	Christmas boots (white) fragments
+9306668	Christmas hat (white) fragments

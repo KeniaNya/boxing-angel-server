@@ -40,9 +40,17 @@ function settingsCfg(): SettingsConfig {
 
 // Tablas de datos corregidas (sobrescriben a las del OBB)
 const TABLES_DIR = join(import.meta.dir, "..", "tables");
-const overrideTables = existsSync(TABLES_DIR)
-  ? readdirSync(TABLES_DIR).filter((f) => f.endsWith(".txt")).map((f) => ({ name: f, data: new Uint8Array(readFileSync(join(TABLES_DIR, f))) }))
-  : [];
+// Tablas que el servidor usa para jugar y que el cliente TAMBIEN necesita ver iguales: descuenta los
+// fragmentos de fabricacion en local, pinta las recompensas de cada etapa antes de entrar y carga la
+// imagen del banner de gacha. Se mandan desde gamedata/ para no tener dos copias que se separen
+// (las regenera tools/ungacha.ts).
+const GAMEDATA_TO_CLIENT = ["fragment_info.txt", "chapter_info.txt", "Lottery_Info.txt"];
+const fromDir = (dir: string, names: string[]) =>
+  names.filter((f) => existsSync(join(dir, f))).map((f) => ({ name: f, data: new Uint8Array(readFileSync(join(dir, f))) }));
+const overrideTables = [
+  ...(existsSync(TABLES_DIR) ? fromDir(TABLES_DIR, readdirSync(TABLES_DIR).filter((f) => f.endsWith(".txt"))) : []),
+  ...fromDir(join(import.meta.dir, "..", "gamedata"), GAMEDATA_TO_CLIENT),
+].filter((t, i, all) => all.findIndex((o) => o.name === t.name) === i); // tables/ manda sobre gamedata/
 
 // Las de tables/ mandan sobre las generadas a partir de la configuracion (role_info con el precio del panel).
 function allOverrides(cfg: SettingsConfig) {

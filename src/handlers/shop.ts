@@ -36,8 +36,9 @@ export const FREE_NORMAL_TIMES = 5; // s_LotteryTimes_Normal (tiradas normales g
 export const FREE_CHOOSE_TIMES = 6; // s_LotteryFreeChooseTimes
 export const STORE = { NORMAL: 1, PVP: 2, ELITE: 3 } as const; // StoreType
 export const STORE_SLOTS = 6;
-/** Evento activo de Lottery_Info por tipo de gacha (columna 1). Cosplay no tiene pool en la tabla: usa el de Choice. */
-export const GACHA_EVENT: Record<number, string> = { 1: "1", 2: "2", 3: "4", 4: "6" };
+/** Cada cuanto rota el banner de cada gacha entre todos los eventos de Lottery_Info. Con 12 filas Virtual y
+ *  13 Choice, un dia por evento hace que cualquier banner vuelva en menos de dos semanas. */
+export const GACHA_ROTATION_MS = 24 * 3600 * 1000;
 const COIN_IDS = ["gcoin", "vcoin", "pcoin", "ecoin"]; // coinType de la tienda 0..3 == clave "1".."4" del precio JSON
 
 // ---- price_info: indices de columna segun CSDatabase.LoadCostData
@@ -96,6 +97,17 @@ export function fragmentOfEquip(equipId: string): FragInfo | undefined {
 function equipRow(id: string): string[] | undefined {
   return tableById("equip_info.txt").get(id);
 }
+/** Ranuras que el personaje lleva puestas (role_info col 6) mas el equipo de apoyo; 0107 son los
+ *  cabezales de los NPC y no se equipan. */
+const EQUIP_PREFIXES = ["0101", "0102", "0103", "0104", "0105", "0106", "0401", "0402", "0403", "0404", "0405"];
+let playerEquipCache: string[][] | null = null;
+/** Equipo que un jugador puede llevar: visible (col 16 = oculto) y de una ranura real. */
+export function playerEquip(): string[][] {
+  if (!playerEquipCache) {
+    playerEquipCache = table("equip_info.txt").filter((f) => (f[16] ?? "").trim() === "0" && EQUIP_PREFIXES.includes(f[0].slice(0, 4)));
+  }
+  return playerEquipCache;
+}
 /** Fragmentos que devuelve un equipo duplicado (equip_info col 33; 10 por defecto como en la tabla). */
 function toFragmentAmount(equipId: string): number {
   const n = Number(equipRow(equipId)?.[33]);
@@ -133,12 +145,23 @@ function lotteryTable(): LotteryPool[] {
   return lotteryRows;
 }
 const LOTTERY_TYPE_NAME: Record<number, string> = { 1: "Normal", 2: "Virtual", 3: "Choice", 4: "Cosplay" };
+/**
+ * Evento activo de un tipo de gacha. En vez de un evento fijo se recorren todas las filas de
+ * Lottery_Info de ese tipo, una por periodo, iguales para todos los jugadores: asi los 109 objetos
+ * que solo estaban en banners de 2017 vuelven a salir. El cliente lee la imagen y el contenido de la
+ * fila que le decimos, y tools/ungacha.ts ya dejo todas las filas apuntando a una imagen que existe.
+ */
+export function gachaEvent(type: number, now = Date.now()): string {
+  const rows = lotteryTable().filter((r) => r.type === LOTTERY_TYPE_NAME[type]);
+  if (!rows.length) return "";
+  return rows[Math.floor(now / GACHA_ROTATION_MS) % rows.length].event;
+}
 /** Pool de un tipo de gacha (fila Lottery_Info del evento activo). Cosplay sin objetos cae al pool de Choice. */
-export function lotteryPool(type: number): LotteryPool {
-  const find = (t: number) => lotteryTable().find((r) => r.type === LOTTERY_TYPE_NAME[t] && r.event === GACHA_EVENT[t]);
+export function lotteryPool(type: number, now = Date.now()): LotteryPool {
+  const find = (t: number) => lotteryTable().find((r) => r.type === LOTTERY_TYPE_NAME[t] && r.event === gachaEvent(t, now));
   const row = find(type);
   if (row && row.one.length > 0) return row;
-  return find(LOTTERY.CHOICE) ?? { type: "Choice", event: GACHA_EVENT[3], one: [], ten: [] };
+  return find(LOTTERY.CHOICE) ?? { type: "Choice", event: gachaEvent(LOTTERY.CHOICE, now), one: [], ten: [] };
 }
 
 // ---- utilidades de tiempo y azar
@@ -306,20 +329,18 @@ function stockKey(storeId: number, now: Date): string {
   return `${day}#${hours.filter((h) => minutes >= h).length}`;
 }
 type Candidate = { id: string; price: Record<string, number>; coinTypes: number[] };
-function storeCandidates(storeId: number): Candidate[] {
-  const { fragById } = loadFrags();
+export function storeCandidates(storeId: number): Candidate[] {
+  const { fragByEquip } = loadFrags();
+  // Las tres tiendas pueden sacar el fragmento de cualquier equipo que el jugador pueda llevar; lo que las
+  // distingue es la moneda. En el original cada tienda miraba el origen del equipo (columna "shop"/"pvp"/
+  // "eshop"), y eso dejaba fuera de toda tienda a los 242 objetos de evento.
+  const coinTypes = storeId === STORE.PVP ? [2] : storeId === STORE.ELITE ? [3] : [0, 1];
   const out: Candidate[] = [];
-  if (storeId === STORE.PVP) {
-    for (const f of fragById.values()) if (f.source === "pvp") out.push({ id: f.id, price: f.price, coinTypes: [2] });
-  } else if (storeId === STORE.ELITE) {
-    for (const f of fragById.values()) if ((equipRow(f.equip)?.[31] ?? "").trim() === "eshop") out.push({ id: f.id, price: f.price, coinTypes: [3] });
-  } else {
-    for (const f of fragById.values()) if (f.source === "shop") out.push({ id: f.id, price: f.price, coinTypes: [0, 1] });
-    // Equipo de apoyo (logistica, 04xxxxx): en el original sus fragmentos solo caian del gacha ("gdraw"/"vdraw"); para que
-    // los huecos de equipo se puedan usar sin gacha, sus fragmentos se venden aqui por oro o diamantes (fragment_info col 4).
-    for (const f of fragById.values()) if (f.equip.startsWith("04") && !out.some((c) => c.id === f.id)) out.push({ id: f.id, price: f.price, coinTypes: [0, 1] });
-    for (const c of components()) if (c.source === "gdraw" && c.component <= 3) out.push({ id: c.id, price: c.price, coinTypes: [0] });
+  for (const e of playerEquip()) {
+    const f = fragByEquip.get(e[0]);
+    if (f) out.push({ id: f.id, price: f.price, coinTypes });
   }
+  if (storeId === STORE.NORMAL) for (const c of components()) if (c.source === "gdraw" && c.component <= 3) out.push({ id: c.id, price: c.price, coinTypes: [0] });
   // Solo candidatos con precio en alguna de sus monedas
   return out.filter((c) => c.coinTypes.some((t) => c.price[String(t + 1)] > 0));
 }
@@ -370,7 +391,9 @@ export function signinCalendar(month: string): RewardOut[] {
   const [y, m] = month.split("-").map(Number);
   const days = new Date(y, m, 0).getDate();
   const cycle: RewardOut[] = config().economy.signinCycle.map((r) => ({ id: r.id, amount: r.amount }));
-  const frags = lotteryPool(LOTTERY.VIRTUAL).one.map(fragmentOfEquip).filter((f): f is FragInfo => !!f);
+  // El pool de diamantes rota a diario, pero el cliente pinta el calendario del mes entero: se ancla al
+  // dia 1 para que el premio del dia 7 no cambie bajo los pies del jugador.
+  const frags = lotteryPool(LOTTERY.VIRTUAL, Date.UTC(y, m - 1, 1)).one.map(fragmentOfEquip).filter((f): f is FragInfo => !!f);
   const out: RewardOut[] = [];
   for (let d = 1; d <= days; d++) {
     if (d % 7 === 0 && frags.length) out.push({ id: pick(frags, rnd).id, amount: rangeInt(5, 7, rnd) });
@@ -396,15 +419,15 @@ function wishConsume(): Record<string, number> {
   return out;
 }
 let wishIntervalCache: Record<string, string[]> | null = null;
-function wishIntervals(): Record<string, string[]> {
+export function wishIntervals(): Record<string, string[]> {
   if (!wishIntervalCache) {
     wishIntervalCache = {};
     for (const [threshold, rare] of WISH_INTERVALS) {
-      const ids = table("equip_info.txt")
-        .filter((f) => (f[32] ?? "").trim().toUpperCase() === rare && ["gdraw", "vdraw", "v2draw"].includes((f[31] ?? "").trim()))
-        .map((f) => f[0])
-        .slice(0, 12);
-      wishIntervalCache[String(threshold)] = ids;
+      // Todo el equipo de esa rareza, no solo el que salia por gacha: antes el filtro por origen mas
+      // el corte a 12 dejaban el tramo S en 12 guantes y nada mas.
+      wishIntervalCache[String(threshold)] = playerEquip()
+        .filter((f) => (f[32] ?? "").trim().toUpperCase() === rare)
+        .map((f) => f[0]);
     }
   }
   return wishIntervalCache;
@@ -457,7 +480,7 @@ export const handlers: Record<string, PlayerHandler> = {
   /** Info del lobby de gacha: type (1 = panel Choice), id (eventos de Lottery_Info), coin (precios 1/10) e info (objetos elegibles). */
   GetGachaInfoC2S({ params }) {
     const req = Number(params.type ?? 0); // 0 = todo; 1/2/3 = un panel (LotteryReNewType)
-    const events = [GACHA_EVENT[1], GACHA_EVENT[2], GACHA_EVENT[3]];
+    const events = [gachaEvent(1), gachaEvent(2), gachaEvent(3)];
     const id = req >= 1 && req <= 3 ? [events[req - 1]] : events;
     const coinList = [
       [costAt(COST_COL.LOTTERY_NORMAL, 0), costAt(COST_COL.LOTTERY_NORMAL, 1)],
@@ -469,7 +492,7 @@ export const handlers: Record<string, PlayerHandler> = {
 
   /** Info del gacha de seleccion: type, id (evento, string) e info (objetos elegibles). El cliente actual no lo envia. */
   GetChoiceGachaInfoC2S() {
-    return [s2c("GetChoiceGachaInfoS2C", { res: R.OK, type: config().gachaType, id: GACHA_EVENT[3], info: choiceInfo() })];
+    return [s2c("GetChoiceGachaInfoS2C", { res: R.OK, type: config().gachaType, id: gachaEvent(3), info: choiceInfo() })];
   },
 
   /** Elegir premio tras 6 tiradas de Choice/Cosplay: reward {id, amount} (+ change_reward objeto si es duplicado); resetea el contador. */

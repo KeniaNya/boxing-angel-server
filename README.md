@@ -124,3 +124,33 @@ API JSON en `/admin/api/*` con cabecera `Authorization: Bearer <ADMIN_TOKEN>` (v
   jugador, al comprar un rol y en cada login.
 - **Diamantes por jugar** (panel → Economía): precio de los personajes (`rolePriceDiamonds`, servido también en
   la `role_info.txt` del zip de Setting), diamantes por capítulo (primera vez y repeticiones), élite, PvP y nivel.
+
+## Sin gacha: todo se consigue jugando (2026-09-16)
+
+Objetivo del servidor comunitario: **ninguna pieza depende de que su banner de 2017 esté activo**.
+En el original, 368 de los 530 equipos eran inalcanzables (242 con origen `none`, el resto en pools
+de eventos que nunca se activaban). Ahora las 447 piezas que un personaje puede llevar tienen al
+menos dos rutas, y `src/handlers/ungacha.test.ts` falla si una edición de tabla vuelve a encerrar algo.
+
+Las rutas, de más a menos dirigida:
+
+- **Fabricar** (lo que permite pedir una pieza concreta). Cada equipo visible tiene fila en
+  `fragment_info` — se añadieron las 13 que faltaban — y **cada etapa normal suelta siempre** los
+  fragmentos que le tocan, repartidos por rareza a lo largo del mapa. La cantidad por victoria se
+  calcula pieza a pieza (`TARGET_WINS`) para que **ninguna pase de 10 combates** (mediana 9), con los
+  costes de fabricación ya a la mitad: 50 fragmentos y 17 500 de oro para una S.
+  `bun tools/where.ts <id|nombre>` dice de qué etapa sale cada una.
+- **Tiendas**: las tres (normal, PvP y élite) pueden sacar el fragmento de cualquier equipo; lo que
+  las distingue es la moneda. Antes cada una miraba el origen del equipo y eso dejaba fuera de toda
+  tienda a los objetos de evento.
+- **Pozo de deseos**: cada tramo sortea entre **todo** el equipo de su rareza. Antes un filtro por
+  origen más un corte a 12 dejaban el tramo S en doce guantes y nada más.
+- **Gacha**: el banner de cada tipo **rota** (`GACHA_ROTATION_MS`, un día) por todas las filas de
+  `Lottery_Info` en vez de quedarse en un evento fijo, así que los 109 objetos que solo existían en
+  banners viejos vuelven a salir. Todas las filas apuntan a una de las 4 imágenes de `static/lottery`.
+
+Las tablas las regenera **`bun tools/ungacha.ts`** a partir de las copias intactas del OBB en
+`tools/base/`; es idempotente y ahí están los números (divisor de coste, fragmentos por victoria).
+`fragment_info.txt`, `chapter_info.txt` y `Lottery_Info.txt` viajan al cliente en el zip de Setting
+(`GAMEDATA_TO_CLIENT` en `src/index.ts`) porque el cliente descuenta los fragmentos en local y pinta
+la recompensa de la etapa antes de entrar: si no coincidieran, el jugador vería otros números.

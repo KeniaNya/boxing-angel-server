@@ -32,11 +32,14 @@ test("jugar y reportar un capitulo normal avanza ch_progress y da exp/recompensa
   // AP total de la victoria = apNeed (6), mas el regalo de AP si subio de nivel
   expect(p.ap).toBe(ap0 - 6 + (levelUp ? lvInfo(2).apGift : 0));
   expect(r.ap).toBe(p.ap);
-  // recompensa segura de la tabla: 0511007 x2, mas los diamantes de la primera victoria (panel -> Economia)
+  // recompensa segura de la tabla: 0511007 x2, mas los diamantes de la primera victoria (panel -> Economia).
+  // La etapa suelta ademas los fragmentos que le asigno tools/ungacha.ts, asi que se comprueba que
+  // estan estos, no que sean los unicos.
   const eco = config().economy;
   const diamonds = eco.storyDiamondsFirstClear + eco.storyDiamondsReplay + (levelUp ? eco.levelUpDiamonds : 0);
   expect(itemCount(p, "0511007")).toBe(2);
-  expect(r.reward).toEqual([["0511007", 2], ["vcoin", eco.storyDiamondsFirstClear + eco.storyDiamondsReplay]]);
+  expect(r.reward).toContainEqual(["0511007", 2]);
+  expect(r.reward).toContainEqual(["vcoin", eco.storyDiamondsFirstClear + eco.storyDiamondsReplay]);
   expect(p.coin[1]).toBe(vcoin0 + diamonds);
   expect(Array.isArray(r.gold)).toBe(true);
   expect((r.gold as number[]).length).toBe(3);
@@ -130,7 +133,7 @@ test("directo exige capitulo superado y tickets", async () => {
   const g0 = p.coin[0];
   const r = first(await send("StraightAheadChapterC2S", { chapter: "1001010", type: 1, amount: 2, rate: [] }));
   expect(r.res).toBe(0);
-  expect(r.reward).toEqual([["0511007", 4]]);
+  expect(r.reward).toContainEqual(["0511007", 4]); // x2 del directo; la etapa suelta ademas sus fragmentos
   expect(r.get_player_exp).toBe(12);
   expect(itemCount(p, "0202010")).toBe(1);
   expect(p.coin[0]).toBe(g0 + (r.gold as number));
