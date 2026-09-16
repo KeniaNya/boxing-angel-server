@@ -109,3 +109,18 @@ túnel lo ofrece: el token viaja en cada petición). Requiere `ADMIN_TOKEN` en `
 - **Cuentas** y **log** reciente del servidor.
 
 API JSON en `/admin/api/*` con cabecera `Authorization: Bearer <ADMIN_TOKEN>` (ver `src/admin.ts`).
+
+## Amigos, retos en vivo y economía de diamantes (2026-09-16)
+
+- **Amigos**: `tables/TutorialAndLock.txt` desbloquea la lista al nivel 10 (la build tailandesa la tenía en 99).
+  Al aceptar una solicitud, la respuesta lleva también el `NoticeUpdateFriendS2C` que hace que el cliente añada
+  al amigo a su lista (sin él no aparecía hasta el siguiente login).
+- **Retos de PvP en vivo** (`src/live.ts`): además de la cola rápida, `challenge{tag}` (auid de rol o nombre) →
+  `invite` al retado → `accept{id}` empareja como la cola; `decline`, `cancel_challenge` o 30 s sin respuesta lo
+  anulan. `/api/health` → `live.invites`.
+- **Equipo de apoyo** (logística, equipos `04xxxxx`, 5 huecos por rol): `SetupEquip`/`TakeOffEquip type 1` los
+  aceptan; sus fragmentos se venden en la tienda normal.
+- **Habilidades propias de cada personaje** (`role_info` cols 12/13): `ensureRoleData` las registra al crear el
+  jugador, al comprar un rol y en cada login.
+- **Diamantes por jugar** (panel → Economía): precio de los personajes (`rolePriceDiamonds`, servido también en
+  la `role_info.txt` del zip de Setting), diamantes por capítulo (primera vez y repeticiones), élite, PvP y nivel.
