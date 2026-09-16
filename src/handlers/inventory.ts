@@ -12,7 +12,7 @@
 
 import type { PlayerHandler, Frame } from "../game.ts";
 import { s2c, coin, pay, addCoin, itemCount, addItem, removeItem, findEquip, addEquip, removeEquip, isEquipId, addPlayerExp, addRoleExp, refreshAp, currentRole, notice, type RewardItem, spendTp } from "../economy.ts";
-import { ext, newRole, ensureRoleData, LOGISTICS_SLOTS, type Player, type Role, type Equip } from "../players.ts";
+import { ext, newRole, ensureRoleData, LOGISTICS_SLOTS, padSlots, type Player, type Role, type Equip } from "../players.ts";
 import { table, tableById, roleTable } from "../gamedata.ts";
 import { config, rolePriceDiamonds } from "../config.ts";
 
@@ -209,10 +209,9 @@ const int = (v: unknown, d = NaN) => {
 /** LoginS2C.ParseRole lee "prop"; los stubs offline usan "pt": se mandan ambos. */
 export const roleOut = (r: Role) => ({ ...r, pt: r.prop });
 
-/** Garantiza 6 huecos de piezas en el equipo (el cliente rellena con "" cuando llega vacio). */
+/** Garantiza 6 huecos de piezas en el equipo (el cliente NO rellena: indexa Slot[0..5] directamente). */
 function slots6(e: Equip): string[] {
-  while (e.slot.length < 6) e.slot.push("");
-  return e.slot;
+  return padSlots(e).slot;
 }
 
 /** Quita un equipo de todos los roles que lo lleven (una pieza = una instancia). */

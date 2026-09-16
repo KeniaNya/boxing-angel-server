@@ -1082,9 +1082,9 @@
 9108004	gain 1500 exp
 9108005	gain 300 exp
 9108006	gain 60 exp
-9108007	gain 50000 Bills
-9108008	gain 20000 Bills
-9108009	gain 5000 Bills
+9108007	Can be sold for 10000 Bills
+9108008	Can be sold for 3000 Bills
+9108009	Can be sold for 500 Bills
 9108010	Directly pass a fight
 9108011	restore 60 hearts
 9108012	gain 100 diamonds

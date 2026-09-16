@@ -3,7 +3,7 @@ import { testSession } from "../testutil.ts";
 import { fragmentOf, itemInfo, skillBuyCost, equipInfo, priceAt, PRICE } from "./inventory.ts";
 import { roleTable } from "../gamedata.ts";
 import { rolePriceDiamonds } from "../config.ts";
-import { ensureRoleData } from "../players.ts";
+import { ensureRoleData, padSlots } from "../players.ts";
 import { addEquip, findEquip, itemCount } from "../economy.ts";
 
 const res = (out: { paramObject: Record<string, unknown> }[]) => out[0].paramObject.res;
@@ -227,4 +227,21 @@ test("combate Dream (tutorial): ReportPvEResult concede las recompensas del capi
   expect(p.items["0201026"]).toBeGreaterThanOrEqual(2);
   await send("ReportPvEResultC2S", { ch_id: "3201090", result: 1, prop: {}, prop1: {} });
   expect(p.coin[0]).toBe(gold + 1500);
+});
+
+test("Equipo: siempre 6 huecos de piezas (nuevo, fabricado y cargado con slot: [])", async () => {
+  const { p, send } = await testSession();
+  for (const e of p.equips) expect(e.slot).toEqual(["", "", "", "", "", ""]);
+  const made = addEquip(p, "0103007");
+  expect(made.slot).toHaveLength(6);
+  // Un jugador guardado antes del arreglo (slot: []) se repara al cargarlo
+  const e0 = p.equips[0];
+  e0.slot = [];
+  padSlots(e0);
+  expect(e0.slot).toEqual(["", "", "", "", "", ""]);
+  // y las piezas se pueden poner en cualquier hueco (antes el cliente lanzaba ArgumentOutOfRangeException)
+  const req = equipInfo(e0.id)!.slotRequires[0];
+  p.items[req[5]] = 1;
+  expect(res(await send("EquipInsertPartsC2S", { eid: e0.id, pid: req[5], index: 5 }))).toBe(0);
+  expect(e0.slot[5]).toBe(req[5]);
 });

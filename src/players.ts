@@ -104,6 +104,8 @@ export function loadPlayer(acc: string): Player | null {
   if (!p.ext) p.ext = {};
   // Migracion: auids generados antes con hasta 10^10 desbordaban int32 en el cliente
   for (const r of Object.values(p.roles)) if (Number(r.auid) > 2_147_483_647) r.auid = newAuid();
+  // Migracion: los equipos creados antes con slot: [] (el cliente exige 6 huecos)
+  for (const e of p.equips) padSlots(e);
   cache.set(acc, p);
   return p;
 }
@@ -151,8 +153,18 @@ export function newRole(rid: string): Role {
   };
 }
 
+/** Huecos de piezas de un equipo: SIEMPRE 6 cadenas. El cliente indexa Slot[0..5] sin comprobar el tamano
+ *  (CSUIEquipInfoPanel.OnSlotClick, CSUIEquipAccessoriesPanel...) y con una lista vacia lanza
+ *  ArgumentOutOfRangeException al tocar un hueco: "toco la pieza que tengo y el juego se congela". */
+export const EQUIP_SLOTS = 6;
+export function padSlots(e: Equip): Equip {
+  if (!Array.isArray(e.slot)) e.slot = [];
+  while (e.slot.length < EQUIP_SLOTS) e.slot.push("");
+  return e;
+}
+
 export function newEquip(id: string): Equip {
-  return { id, lv: 1, quality: 1, slot: [], prop: {}, buff: {}, buff_item: [] };
+  return padSlots({ id, lv: 1, quality: 1, slot: [], prop: {}, buff: {}, buff_item: [] });
 }
 
 /** Inventario inicial (tomado del stub offline del cliente, sin los "x50 de todo" de pruebas). */
