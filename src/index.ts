@@ -11,7 +11,7 @@ import { handleAdmin } from "./admin.ts";
 import { publicHtml, pickLang } from "./public.ts";
 import { serveFile } from "./files.ts";
 import { log } from "./logbuf.ts";
-import { createAccount, verifyAccount, loadAccounts, accountCount, HTTP_WRONG_DATA } from "./accounts.ts";
+import { createAccount, verifyAccount, bindAccount, loadAccounts, accountCount, HTTP_WRONG_DATA } from "./accounts.ts";
 import { handleSocket, sessionCount } from "./socket.ts";
 import { livePeerOpen, liveMessage, livePeerClose, liveStatus, type Peer } from "./live.ts";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
@@ -60,7 +60,7 @@ function gameList() {
   return [{ id: 1, ip: GAME_HOST, name: config().networkName, port: String(GAME_PORT), psize: "0", status: "0" }];
 }
 
-function handleLogin(action: string, q: URLSearchParams): Response {
+async function handleLogin(action: string, q: URLSearchParams, req: Request): Promise<Response> {
   const acc = q.get("acc") ?? "";
   const pwd = q.get("pwd") ?? "";
   const type = Number(q.get("type") ?? "0");
@@ -80,9 +80,16 @@ function handleLogin(action: string, q: URLSearchParams): Response {
       if (r.res !== 0) return json({ res: r.res });
       return json({ res: 0, token: r.token, game_list: gameList() });
     }
-    case "FastAccBinding":
-      // Vinculacion de cuenta rapida (Facebook/dispositivo): no soportado todavia.
-      return json({ res: HTTP_WRONG_DATA });
+    case "FastAccBinding": {
+      // Vinculacion de cuenta rapida: CSDataManager.Binding manda un WWWForm (POST multipart).
+      const form = req.method === "POST" ? await req.formData().catch(() => null) : null;
+      const field = (k: string) => String(form?.get(k) ?? q.get(k) ?? "");
+      const fast = field("fast_acc");
+      const target = field("binding_acc");
+      const res = bindAccount(fast, field("fast_pwd"), target, field("binding_pwd"), Number(field("binding_type") || 1));
+      log("login/FastAccBinding", fast, "->", target, "=", res);
+      return json({ res });
+    }
     default:
       return json({ res: HTTP_WRONG_DATA });
   }
@@ -108,7 +115,7 @@ const server = Bun.serve({
 
     // Login server original: http://<host>/BALoginServer/Login/<Create|Verify|FastAccBinding>?acc=&pwd=&type=&ver=
     const login = p.match(/^\/BALoginServer\/Login\/([A-Za-z]+)\/?$/);
-    if (login) return handleLogin(login[1], url.searchParams);
+    if (login) return handleLogin(login[1], url.searchParams, req);
 
     // Zip de tablas de Setting: el cliente pide <m_ZipDataURL><m_SettingFileName>.zip?abc=<random>
     if (/^\/boxingangel\/setting\/[^/]+\/[^/]+\.zip$/.test(p)) {

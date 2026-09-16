@@ -4,7 +4,7 @@
 
 import { config, updateConfig, normalizeRewards, type ServerConfig } from "./config.ts";
 import { catalog, dictionary, nameOf, openChapterOptions, weekSchedule, todayOpenChapters, KINDS } from "./catalog.ts";
-import { listAccounts, accountCount, deleteAccount } from "./accounts.ts";
+import { listAccounts, accountCount, deleteAccount, setAccountLogin, playerKey } from "./accounts.ts";
 import { loadPlayer, savePlayer, listPlayers, deletePlayer, type Player } from "./players.ts";
 import { grant } from "./economy.ts";
 import { sendMail } from "./handlers/missions.ts";
@@ -63,7 +63,7 @@ export async function handleAdmin(path: string, req: Request, ctx: Ctx): Promise
       return json({ lines: recentLog(Math.min(500, Math.max(1, n))) });
     }
     if (route === "accounts" && req.method === "GET") {
-      return json(listAccounts().map((a) => ({ acc: a.acc, type: a.type, createdAt: a.createdAt, lastLoginAt: a.lastLoginAt ?? null })));
+      return json(listAccounts().map((a) => ({ acc: a.acc, key: a.key ?? a.acc, type: a.type, createdAt: a.createdAt, lastLoginAt: a.lastLoginAt ?? null, boundAt: a.boundAt ?? null })));
     }
     if (route === "items" && req.method === "GET") {
       // buscador de recompensas (monedas + objetos + equipo + fragmentos) por nombre o id
@@ -85,10 +85,10 @@ export async function handleAdmin(path: string, req: Request, ctx: Ctx): Promise
     }
     if (route === "players" && req.method === "GET") {
       const q = (new URL(req.url).searchParams.get("q") ?? "").toLowerCase().trim();
-      const logins = new Map(listAccounts().map((a) => [a.acc, a.lastLoginAt ?? null]));
+      const byKey = new Map(listAccounts().map((a) => [a.key ?? a.acc, a]));
       const out = listPlayers()
-        .filter((p) => !q || p.acc.toLowerCase().includes(q) || p.name.toLowerCase().includes(q))
-        .map((p) => summary(p, logins.get(p.acc) ?? null));
+        .filter((p) => !q || p.acc.toLowerCase().includes(q) || p.name.toLowerCase().includes(q) || (byKey.get(p.acc)?.acc ?? "").toLowerCase().includes(q))
+        .map((p) => summary(p, byKey.get(p.acc) ?? null));
       return json(out);
     }
     if (route === "files" && req.method === "GET") return json(listFiles());
@@ -114,11 +114,28 @@ export async function handleAdmin(path: string, req: Request, ctx: Ctx): Promise
         return json({ ok: true });
       }
     }
+    // Rescate: cambiar el nombre de acceso y la contrasena de una cuenta conservando el personaje.
+    // Sirve para quien perdio una cuenta rapida (desinstalo antes de vincularla): se busca su
+    // personaje por nombre en Jugadores y se le dan credenciales que pueda escribir en el juego.
+    const cm2 = /^accounts\/([^/]+)\/login$/.exec(route);
+    if (cm2 && req.method === "POST") {
+      const acc = decodeURIComponent(cm2[1]);
+      const b = (await body()) as { acc?: unknown; pwd?: unknown };
+      const newAcc = String(b.acc ?? "").trim();
+      const newPwd = String(b.pwd ?? "");
+      const res = setAccountLogin(acc, newAcc, newPwd);
+      if (res === 1005) return fail("cuenta no encontrada", 404);
+      if (res === 1003) return fail("el juego solo deja teclear letras y numeros, de 6 a 12 caracteres: tanto la cuenta como la contrasena");
+      if (res === 1008) return fail("ese nombre de acceso ya esta en uso");
+      log("admin: credenciales cambiadas", acc, "->", newAcc);
+      return json({ ok: true, acc: newAcc });
+    }
     const am = /^accounts\/([^/]+)$/.exec(route);
     if (am && req.method === "DELETE") {
       const acc = decodeURIComponent(am[1]);
-      const kicked = closeSessionsOf(acc);
-      const hadPlayer = deletePlayer(acc);
+      const key = playerKey(acc);
+      const kicked = closeSessionsOf(key);
+      const hadPlayer = deletePlayer(key);
       const ok = deleteAccount(acc);
       if (!ok && !hadPlayer) return fail("cuenta no encontrada", 404);
       log("admin: cuenta borrada", acc, `(personaje: ${hadPlayer}, sesiones cerradas: ${kicked})`);
@@ -182,11 +199,11 @@ export async function handleAdmin(path: string, req: Request, ctx: Ctx): Promise
   }
 }
 
-function summary(p: Player, lastLoginAt: string | null) {
+function summary(p: Player, account: { acc: string; lastLoginAt?: string } | null) {
   return {
-    acc: p.acc, name: p.name, lv: p.lv, exp: p.exp, vip: p.vip, coin: p.coin, ap: p.ap, tp: p.tp,
+    acc: p.acc, login: account?.acc ?? null, lastLoginAt: account?.lastLoginAt ?? null, name: p.name, lv: p.lv, exp: p.exp, vip: p.vip, coin: p.coin, ap: p.ap, tp: p.tp,
     roles: Object.keys(p.roles).length, equips: p.equips.length, items: Object.keys(p.items).length,
-    ch_progress: p.ch_progress, pvp_rank: p.pvp_rank, teaching_flag: p.teaching_flag, createdAt: p.createdAt, lastLoginAt,
+    ch_progress: p.ch_progress, pvp_rank: p.pvp_rank, teaching_flag: p.teaching_flag, createdAt: p.createdAt,
   };
 }
 

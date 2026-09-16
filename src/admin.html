@@ -136,7 +136,7 @@
 <section id="tab-players">
   <h2>Jugadores</h2>
   <div class="actions"><input type="text" id="players-q" placeholder="Buscar por cuenta o nombre" style="max-width:320px"><button class="btn secondary" onclick="loadPlayers()">Buscar</button></div>
-  <table id="players-table"><thead><tr><th>Cuenta</th><th>Nombre</th><th>Nivel</th><th>Oro</th><th>Diamantes</th><th>PvP</th><th>Elite</th><th>VIP</th><th>Progreso</th><th>Último login</th></tr></thead><tbody></tbody></table>
+  <table id="players-table"><thead><tr><th>Cuenta</th><th>Acceso</th><th>Nombre</th><th>Nivel</th><th>Oro</th><th>Diamantes</th><th>PvP</th><th>Elite</th><th>VIP</th><th>Progreso</th><th>Último login</th></tr></thead><tbody></tbody></table>
   <div id="player-detail" class="hidden">
     <h3>Editar <span id="pd-acc"></span></h3>
     <div class="row">
@@ -260,8 +260,9 @@
 
 <section id="tab-accounts">
   <h2>Cuentas del login</h2>
-  <p class="msg">Borrar una cuenta elimina también su personaje; el jugador tendrá que crear una cuenta nueva. Para reiniciar solo el progreso usa "Borrar personaje" en la ficha del jugador.</p>
-  <table id="accounts-table"><thead><tr><th>Cuenta</th><th>Tipo</th><th>Creada</th><th>Último login</th><th></th></tr></thead><tbody></tbody></table>
+  <p class="msg">Tipo 0 = cuenta rápida (creada con "Fast Login": nombre y contraseña aleatorios que solo viven en el teléfono). Tipo 1 = cuenta vinculada o registrada, la que se puede recuperar tras desinstalar.</p>
+  <p class="msg">"Credenciales" le da a una cuenta un nombre y una contraseña nuevos <b>sin tocar el personaje</b>: es el rescate para quien perdió una cuenta rápida antes de vincularla (búscalo por el nombre del personaje en Jugadores). Ojo: el juego solo deja teclear <b>letras y números, de 6 a 12 caracteres</b>, en la cuenta y en la contraseña. Borrar una cuenta elimina también su personaje.</p>
+  <table id="accounts-table"><thead><tr><th>Cuenta</th><th>Tipo</th><th>Personaje (clave)</th><th>Creada</th><th>Último login</th><th></th></tr></thead><tbody></tbody></table>
 </section>
 
 <section id="tab-log">
@@ -456,8 +457,8 @@ function loadPlayers() {
   api('players?q=' + encodeURIComponent($('players-q').value.trim())).then(function (list) {
     var tb = $('players-table').querySelector('tbody');
     tb.innerHTML = list.map(function (p) {
-      return '<tr class="click" data-acc="' + esc(p.acc) + '"><td>' + esc(p.acc) + '</td><td>' + esc(p.name) + '</td><td>' + p.lv + '</td><td>' + p.coin[0] + '</td><td>' + p.coin[1] + '</td><td>' + p.coin[2] + '</td><td>' + p.coin[3] + '</td><td>' + p.vip + '</td><td>' + esc(p.ch_progress) + '</td><td>' + esc(p.lastLoginAt ? p.lastLoginAt.replace('T', ' ').slice(0, 16) : '-') + '</td></tr>';
-    }).join('') || '<tr><td colspan="10" class="msg">Sin jugadores</td></tr>';
+      return '<tr class="click" data-acc="' + esc(p.acc) + '"><td>' + esc(p.acc) + '</td><td>' + (p.login === null ? '<span class="msg">sin cuenta</span>' : p.login === p.acc ? '<span class="msg">=</span>' : esc(p.login)) + '</td><td>' + esc(p.name) + '</td><td>' + p.lv + '</td><td>' + p.coin[0] + '</td><td>' + p.coin[1] + '</td><td>' + p.coin[2] + '</td><td>' + p.coin[3] + '</td><td>' + p.vip + '</td><td>' + esc(p.ch_progress) + '</td><td>' + esc(p.lastLoginAt ? p.lastLoginAt.replace('T', ' ').slice(0, 16) : '-') + '</td></tr>';
+    }).join('') || '<tr><td colspan="11" class="msg">Sin jugadores</td></tr>';
     tb.querySelectorAll('tr.click').forEach(function (tr) { tr.onclick = function () { openPlayer(tr.dataset.acc); }; });
     var sel = $('gift-to'); sel.innerHTML = '<option value="all">Todos los jugadores (' + list.length + ')</option>' + list.map(function (p) { return '<option value="' + esc(p.acc) + '">' + esc(p.name) + ' · ' + esc(p.acc) + '</option>'; }).join('');
   });
@@ -498,6 +499,15 @@ function deletePlayer() {
   if (!confirm('¿Borrar el personaje de ' + currentAcc + '? Perderá todo el progreso; al entrar creará uno nuevo y verá el tutorial.')) return;
   api('players/' + encodeURIComponent(currentAcc), { method: 'DELETE' }).then(function () { msg('pd-msg', 'Personaje borrado. Si el jugador está dentro, que cierre y abra el juego.', 'ok'); $('player-detail').classList.add('hidden'); loadPlayers(); loadStatus(); })
     .catch(function (e) { msg('pd-msg', e.message, 'err'); });
+}
+function setLogin(acc) {
+  var nuevo = prompt('Nombre de acceso nuevo para ' + acc + '.\nEl juego solo deja teclear LETRAS Y NUMEROS, de 6 a 12 caracteres.\nEl personaje no se toca.', acc);
+  if (!nuevo) return;
+  var pwd = prompt('Contrasena nueva para ' + nuevo + ' (letras y numeros, de 6 a 12).');
+  if (!pwd) return;
+  api('accounts/' + encodeURIComponent(acc) + '/login', { method: 'POST', body: { acc: nuevo, pwd: pwd } })
+    .then(function (r) { alert('Listo. El jugador entra con:\n\ncuenta: ' + r.acc + '\nclave: ' + pwd + '\n\nEn el juego: boton \"Login\" de la pantalla de cuentas.'); loadAccounts(); loadPlayers(); })
+    .catch(function (e) { alert(e.message); });
 }
 function deleteAccount(acc) {
   if (!confirm('¿Borrar la cuenta ' + acc + ' y su personaje? No se puede deshacer.')) return;
@@ -575,9 +585,10 @@ function uploadFile() {
 function loadAccounts() {
   api('accounts').then(function (list) {
     $('accounts-table').querySelector('tbody').innerHTML = list.map(function (a) {
-      return '<tr><td>' + esc(a.acc) + '</td><td>' + a.type + '</td><td>' + esc(a.createdAt.replace('T', ' ').slice(0, 16)) + '</td><td>' + esc(a.lastLoginAt ? a.lastLoginAt.replace('T', ' ').slice(0, 16) : '-') + '</td><td><button class="btn danger" data-acc="' + esc(a.acc) + '">Borrar</button></td></tr>';
-    }).join('') || '<tr><td colspan="5" class="msg">Sin cuentas</td></tr>';
-    $('accounts-table').querySelectorAll('button').forEach(function (b) { b.onclick = function () { deleteAccount(b.dataset.acc); }; });
+      return '<tr><td>' + esc(a.acc) + '</td><td>' + a.type + (a.boundAt ? ' (vinculada)' : '') + '</td><td>' + (a.key === a.acc ? '<span class="msg">=</span>' : esc(a.key)) + '</td><td>' + esc(a.createdAt.replace('T', ' ').slice(0, 16)) + '</td><td>' + esc(a.lastLoginAt ? a.lastLoginAt.replace('T', ' ').slice(0, 16) : '-') + '</td><td><button class="btn secondary" data-login="' + esc(a.acc) + '">Credenciales</button> <button class="btn danger" data-acc="' + esc(a.acc) + '">Borrar</button></td></tr>';
+    }).join('') || '<tr><td colspan="6" class="msg">Sin cuentas</td></tr>';
+    $('accounts-table').querySelectorAll('button[data-acc]').forEach(function (b) { b.onclick = function () { deleteAccount(b.dataset.acc); }; });
+    $('accounts-table').querySelectorAll('button[data-login]').forEach(function (b) { b.onclick = function () { setLogin(b.dataset.login); }; });
   });
 }
 
