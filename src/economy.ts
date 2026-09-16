@@ -153,6 +153,39 @@ export function spendAp(p: Player, amount: number): boolean {
   return true;
 }
 
+// ---- puntos de entrenamiento (TP): el cliente los regenera solo (PacketHallRoad.PT_NextTime = PT_Time + 600 s hasta el
+// maximo de vip_info fila 3), asi que el servidor debe hacer exactamente lo mismo o el cliente cree tener TP que el
+// servidor niega (LevelUpSkill/ConfigurationRoleProp -> 1019 "recursos insuficientes").
+export const TP_REGEN_MS = 600 * 1000; // 1 TP cada 600 s (CSDataCenter.s_RecoveryPointTime)
+/** Maximo de TP acumulables segun VIP (vip_info fila 3: 10 sin VIP, 20 con VIP). */
+export function maxTp(p: Player): number {
+  const row = table("vip_info.txt").find((f) => f[0] === "3");
+  const cols = row ? row.slice(3).filter((x) => x.trim() !== "") : [];
+  const i = Math.min(Math.max(0, p.vip | 0), Math.max(cols.length - 1, 0));
+  return Number(cols[i]) || 10;
+}
+export function refreshTp(p: Player, now = Date.now()): void {
+  const max = maxTp(p);
+  if (!Number.isFinite(p.tp_time) || p.tp_time <= 0) p.tp_time = now;
+  if (p.tp >= max) {
+    p.tp_time = now;
+    return;
+  }
+  const ticks = Math.floor((now - p.tp_time) / TP_REGEN_MS);
+  if (ticks > 0) {
+    p.tp = Math.min(max, p.tp + ticks);
+    p.tp_time = p.tp >= max ? now : p.tp_time + ticks * TP_REGEN_MS;
+  }
+}
+/** true si tenia suficientes TP (y descuenta); al bajar del maximo el reloj de regeneracion arranca ahora (PacketHallRoad.PT_Amount set). */
+export function spendTp(p: Player, amount: number): boolean {
+  refreshTp(p);
+  if (p.tp < amount) return false;
+  if (p.tp >= maxTp(p)) p.tp_time = Date.now();
+  p.tp -= amount;
+  return true;
+}
+
 // ---- recompensas: aplica una lista {id, amount} (monedas, exp, ap, objetos o equipo) al jugador
 export function grant(p: Player, rewards: RewardItem[]): void {
   for (const r of rewards) {

@@ -192,7 +192,9 @@ test("transeuntes, reparto de puntos, entrenamiento base y flags de tutorial", a
   expect(first(await send("ConfigurationRolePropC2S", { configuration: '{"3":1}' })).res).toBe(1012);
   role.lv = 5;
   const g0 = p.coin[0], tp0 = p.tp;
-  expect(first(await send("ConfigurationRolePropC2S", { configuration: '{"3":1}' })).res).toBe(0);
+  const trained = await send("ConfigurationRolePropC2S", { configuration: '{"3":1}' });
+  expect(trained[0].methodName).toBe("ConfigurationPtS2C"); // el cliente no tiene ConfigurationRolePropS2C
+  expect(first(trained).res).toBe(0);
   expect(role.prop["3"]).toBe(2);
   expect(p.tp).toBe(tp0 - 1);
   expect(p.coin[0]).toBe(g0 - 500); // TrainBasePointCost para nivel 1 -> fila 2 (col 18 = 500)
@@ -205,4 +207,17 @@ test("transeuntes, reparto de puntos, entrenamiento base y flags de tutorial", a
   expect(g.res).toBe(0);
   expect(g.size).toBe(0);
   expect(Array.isArray(g.chapters)).toBe(true);
+});
+
+test("TP se regenera 1 cada 600 s hasta el maximo de vip_info (como PacketHallRoad del cliente)", async () => {
+  const { p, send } = await testSession();
+  p.tp = 0;
+  p.tp_time = Date.now() - 25 * 60 * 1000; // 25 min -> 2 puntos, el reloj conserva el resto
+  await send("LogTeachingFlagC2S", { main: 1, deputy: 1 });
+  expect(p.tp).toBe(2);
+  expect(Date.now() - p.tp_time).toBeGreaterThanOrEqual(5 * 60 * 1000 - 5000);
+  p.tp_time = Date.now() - 24 * 60 * 60 * 1000;
+  await send("LogTeachingFlagC2S", { main: 1, deputy: 2 });
+  expect(p.tp).toBe(10); // maximo sin VIP
+  expect(Date.now() - p.tp_time).toBeLessThan(5000); // lleno: el reloj se reinicia
 });

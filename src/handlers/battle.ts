@@ -13,11 +13,7 @@ import type { PlayerHandler } from "../game.ts";
 import { table, roleTable } from "../gamedata.ts";
 import { config } from "../config.ts";
 import { ext, type Player, type Role, type Score } from "../players.ts";
-import {
-  s2c, notice, type Frame, type RewardItem,
-  coin, pay, addCoin, removeItem, isCoin, isEquipId,
-  addPlayerExp, addRoleExp, currentRole, refreshAp, spendAp, grant, maxAp,
-} from "../economy.ts";
+import { s2c, notice, type Frame, type RewardItem, coin, pay, addCoin, removeItem, isCoin, isEquipId, addPlayerExp, addRoleExp, currentRole, refreshAp, spendAp, grant, maxAp, spendTp, maxTp } from "../economy.ts";
 
 // Codigos (Localization del cliente, p.ej. PlayChapter_1016 "行動力不足"): 1002 falta parametro · 1003 parametro
 // erroneo · 1005 capitulo inexistente / no terminado · 1006 no esta en un capitulo · 1012 limite alcanzado ·
@@ -636,7 +632,7 @@ export const handlers: Record<string, PlayerHandler> = {
     const cost = costAt("TrainingPoint", p.buy_tp_times);
     if (!cost || !pay(p, "vcoin", cost.cost)) return err(R, ERR.NOT_ENOUGH);
     const now = Date.now();
-    if (p.tp >= vipLimit(p, VIP.TP_MAX)) p.tp_time = now; // por encima del maximo no regenera: el reloj arranca ahora
+    if (p.tp >= maxTp(p)) p.tp_time = now; // por encima del maximo no regenera: el reloj arranca ahora
     p.tp += cost.value;
     p.buy_tp_times++;
     const next = costAt("TrainingPoint", p.buy_tp_times);
@@ -682,9 +678,12 @@ export const handlers: Record<string, PlayerHandler> = {
     return [s2c(R, { res: 0 })];
   },
 
-  /** ConfigurationRolePropC2S {configuration:'{"1..8":n}'}: entrena un atributo base: 1 TP + gcoin (price_info "TrainBasePointCost") por punto, sin superar el nivel del rol. */
+  /** ConfigurationRolePropC2S {configuration:'{"1..8":n}'}: entrena un atributo base: 1 TP + gcoin (price_info "TrainBasePointCost") por punto, sin superar el nivel del rol.
+   *  OJO: el cliente NO tiene clase ConfigurationRolePropS2C; ConfigurationRolePropC2S.Send parsea la respuesta con ConfigurationPtS2C
+   *  (CSUITrainingContents escucha ConfigurationPtS2C.onRespond). Con otro nombre el cliente lo ignora ("is not exist!"), sigue
+   *  esperando y a los 15 s vuelve al login por timeout. */
   ConfigurationRolePropC2S({ p, params }) {
-    const R = "ConfigurationRolePropS2C";
+    const R = "ConfigurationPtS2C";
     const conf = parseConfiguration(params.configuration);
     if (!conf) return err(R, ERR.NO_PARAM);
     const keys = Object.keys(conf);
@@ -699,7 +698,7 @@ export const handlers: Record<string, PlayerHandler> = {
     }
     if (p.tp < points || coin(p, "gcoin") < price) return err(R, ERR.CONDITION); // "數量不足"
     pay(p, "gcoin", price);
-    p.tp -= points;
+    spendTp(p, points);
     for (const k of keys) role.prop[k] = (role.prop[k] ?? 0) + conf[k];
     return [s2c(R, { res: 0 }), notice.coin(p)];
   },

@@ -133,7 +133,15 @@ test("BuySkill / EquipSkill / LevelUpSkill / UnloadSkill", async () => {
   p.roles[p.last_use].lv = 10;
   expect(res(await send("EquipSkillC2S", { id, index: 0 }))).toBe(0);
   expect(p.roles[p.last_use].skill).toBe(id);
-  expect(res(await send("EquipSkillC2S", { id, index: 1 }))).toBe(1003); // segundo hueco requiere VIP
+  expect(res(await send("EquipSkillC2S", { id, index: 1 }))).toBe(1003); // segundo hueco: VIP o nivel 27 (TutorialAndLock Skill2)
+  p.lv = 27;
+  expect(res(await send("EquipSkillC2S", { id, index: 1 }))).toBe(1003); // la misma habilidad ya esta en el hueco 0
+  expect(res(await send("UnloadSkillC2S", { index: 0 }))).toBe(0);
+  expect(res(await send("EquipSkillC2S", { id, index: 1 }))).toBe(0);
+  expect(p.roles[p.last_use].skill2).toBe(id);
+  expect(res(await send("UnloadSkillC2S", { index: 1 }))).toBe(0);
+  expect(res(await send("EquipSkillC2S", { id, index: 0 }))).toBe(0);
+  p.lv = 10;
   p.coin[0] = 1_000_000;
   p.tp = 10;
   expect(res(await send("LevelUpSkillC2S", { id, configuration: [0, 1, 0, 0] }))).toBe(0);

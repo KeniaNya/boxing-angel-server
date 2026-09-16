@@ -11,10 +11,7 @@
 // guantes, cintura, zapatos, accesorio), skill/skill2/passive_skill. Estado propio: ext(p, "inventory").
 
 import type { PlayerHandler, Frame } from "../game.ts";
-import {
-  s2c, coin, pay, addCoin, itemCount, addItem, removeItem, findEquip, addEquip, removeEquip, isEquipId,
-  addPlayerExp, addRoleExp, refreshAp, currentRole, notice, type RewardItem,
-} from "../economy.ts";
+import { s2c, coin, pay, addCoin, itemCount, addItem, removeItem, findEquip, addEquip, removeEquip, isEquipId, addPlayerExp, addRoleExp, refreshAp, currentRole, notice, type RewardItem, spendTp } from "../economy.ts";
 import { ext, newRole, type Player, type Role, type Equip } from "../players.ts";
 import { table, tableById, roleTable } from "../gamedata.ts";
 import { config } from "../config.ts";
@@ -172,7 +169,13 @@ export function priceAt(col: number, index: number): number {
 /** vip_info fila 6: habilidades equipables (columna 3 + nivel VIP). */
 export function vipSkillSlots(p: Player): number {
   const f = table("vip_info.txt").find((r) => num(r[0]) === 6);
-  return f ? Math.max(1, num(f[3 + Math.min(Math.max(p.vip, 0), 1)], 1)) : 1;
+  const byVip = f ? Math.max(1, num(f[3 + Math.min(Math.max(p.vip, 0), 1)], 1)) : 1;
+  // El cliente (CSDataCenter.SetVip) abre el segundo hueco tambien SIN VIP al alcanzar el nivel de TutorialAndLock "Skill2"
+  // (tipo 2 = nivel, valor 27): si el servidor exige VIP, el jugador ve el hueco abierto y recibe 1003 al usarlo.
+  const lock = table("TutorialAndLock.txt").find((r) => r[0] === "Skill2");
+  const unlockLv = lock && num(lock[2]) === 2 ? num(lock[3]) : Infinity;
+  const byLevel = p.lv >= unlockLv ? (f ? Math.max(1, num(f[4], 2)) : 2) : 1;
+  return Math.max(byVip, byLevel);
 }
 
 /** Hueco de equipo por prefijo de id: 0101 pelo(0) 0102 bikini(1) 0103 guantes(2) 0104 cintura(3) 0105 zapatos(4) 0106 accesorio(5). */
@@ -616,7 +619,7 @@ export const handlers: Record<string, PlayerHandler> = {
     if (!cost) return [reply("LevelUpSkillS2C", { res: R.WRONG_DATA })];
     if (next > p.lv) return [reply("LevelUpSkillS2C", { res: R.LIMIT })];
     if (p.tp < cost.tp || coin(p, "gcoin") < cost.coin) return [reply("LevelUpSkillS2C", { res: R.NOT_ENOUGH })];
-    p.tp -= cost.tp;
+    spendTp(p, cost.tp);
     pay(p, "gcoin", cost.coin);
     owned.strengthen_prop[idx] = next;
     return [reply("LevelUpSkillS2C", { res: R.OK }), notice.coin(p)];

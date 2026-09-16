@@ -112,6 +112,7 @@
     <label><input type="checkbox" id="cfg-isNPC"> Personajes NPC en el lobby</label>
     <label><input type="checkbox" id="cfg-isStory"> Historia</label>
     <label><input type="checkbox" id="cfg-isPVP"> PvP</label>
+    <label><input type="checkbox" id="cfg-sexySystem"> Sexy system: la ropa se rompe en combate (como en la versión japonesa; requiere el APK del 2026-09-16 o posterior)</label>
   </div>
   <h3>Capítulos especiales abiertos hoy</h3>
   <p class="msg">Son los eventos de <b>Tour</b> (combates fuera del gimnasio) y <b>Liga especial</b> (Jab, Hook, Uppercut, Dodge) que aparecen en el lobby. El juego original los rotaba por día de la semana según su tabla; puedes dejar la rotación automática o fijar cuáles están abiertos.</p>
@@ -338,7 +339,7 @@ function loadConfig() {
     $('cfg-networkName').value = c.networkName;
     $('cfg-dataVersion').value = c.dataVersion;
     $('cfg-gachaType').value = String(c.gachaType);
-    ['showTutorial', 'isNPC', 'isStory', 'isPVP'].forEach(function (k) { $('cfg-' + k).checked = !!c.flags[k]; });
+    ['showTutorial', 'isNPC', 'isStory', 'isPVP', 'sexySystem'].forEach(function (k) { $('cfg-' + k).checked = !!c.flags[k]; });
     openConfigured = c.openChapters; renderOpenChapters();
     $('cfg-maintenance').value = c.maintenance || '';
     $('news-title').value = c.news.title; $('news-body').value = c.news.body;
@@ -348,7 +349,7 @@ function saveConfig() {
   var patch = {
     connection: Number($('cfg-connection').value), networkName: $('cfg-networkName').value,
     dataVersion: Number($('cfg-dataVersion').value), gachaType: Number($('cfg-gachaType').value),
-    flags: { showTutorial: $('cfg-showTutorial').checked ? 1 : 0, isNPC: $('cfg-isNPC').checked ? 1 : 0, isStory: $('cfg-isStory').checked ? 1 : 0, isPVP: $('cfg-isPVP').checked ? 1 : 0 },
+    flags: { showTutorial: $('cfg-showTutorial').checked ? 1 : 0, isNPC: $('cfg-isNPC').checked ? 1 : 0, isStory: $('cfg-isStory').checked ? 1 : 0, isPVP: $('cfg-isPVP').checked ? 1 : 0, sexySystem: $('cfg-sexySystem').checked ? 1 : 0 },
     openChapters: $('cfg-openAuto').checked ? [] : Array.prototype.map.call(document.querySelectorAll('#cfg-openList input:checked'), function (x) { return x.value; }),
     maintenance: $('cfg-maintenance').value,
   };

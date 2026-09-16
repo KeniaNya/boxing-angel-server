@@ -7,7 +7,10 @@ import { mkdirSync, existsSync, readFileSync, writeFileSync, renameSync } from "
 import { join } from "node:path";
 import type { RewardItem } from "./economy.ts";
 
-export type Flags = { showTutorial: 0 | 1; isNPC: 0 | 1; isStory: 0 | 1; isPVP: 0 | 1 };
+/** sexySystem: "ropa que se rompe" en combate (version japonesa). La build tailandesa lo traia apagado desde un
+ *  config remoto (LoadConfigDB -> api_config.php, muerto): con el flag el servidor sirve ese config con "open" y pone
+ *  brokenMode=0 en Android_connect_info; sin el, "close" y brokenMode=2 (el cliente desactiva la rotura por HP). */
+export type Flags = { showTutorial: 0 | 1; isNPC: 0 | 1; isStory: 0 | 1; isPVP: 0 | 1; sexySystem: 0 | 1 };
 export type ServerConfig = {
   /** 1 = el servidor comunitario es el recomendado; 0 = el modo offline del cliente */
   connection: 0 | 1;
@@ -62,7 +65,7 @@ export const DEFAULTS: ServerConfig = {
   connection: process.env.GAME_CONNECTION === "1" ? 1 : 0,
   networkName: process.env.NETWORK_NAME || "Community",
   dataVersion: Number(process.env.DATA_VERSION || 1),
-  flags: { showTutorial: 1, isNPC: 1, isStory: 1, isPVP: 0 },
+  flags: { showTutorial: 1, isNPC: 1, isStory: 1, isPVP: 0, sexySystem: 1 },
   gachaType: 1,
   news: {
     title: "Boxing Angel · servidor comunitario",
@@ -150,7 +153,7 @@ export function updateConfig(patch: Partial<ServerConfig>): ServerConfig {
   }
   if (patch.flags) {
     const f: Partial<Flags> = {};
-    for (const k of ["showTutorial", "isNPC", "isStory", "isPVP"] as const) {
+    for (const k of ["showTutorial", "isNPC", "isStory", "isPVP", "sexySystem"] as const) {
       if (patch.flags[k] !== undefined) f[k] = patch.flags[k] ? 1 : 0;
     }
     p.flags = { ...config().flags, ...f };

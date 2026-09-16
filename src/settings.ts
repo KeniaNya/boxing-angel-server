@@ -20,7 +20,7 @@ export type SettingsConfig = {
   /** Version de las tablas de datos (network_info campo 9); subirla fuerza re-descarga del zip de datos */
   dataVersion: number;
   /** Flags de funciones (Android_connect_info) */
-  flags: { showTutorial: 0 | 1; isNPC: 0 | 1; isStory: 0 | 1; isPVP: 0 | 1 };
+  flags: { showTutorial: 0 | 1; isNPC: 0 | 1; isStory: 0 | 1; isPVP: 0 | 1; sexySystem: 0 | 1 };
 };
 
 const CRLF = "\r\n";
@@ -55,11 +55,33 @@ export function androidConnectInfo(cfg: SettingsConfig): string {
   // 4 iapSandbox, 5 useCommunity (Facebook), 6 brokenMode, 7 brokenModel, 8 lotteryEventImage,
   // 9 showTutorial, 10 lockSystem, 11 useIAP, 12-14 sin uso conocido, 15 isNPC, 16 isStory,
   // 17 isPVP, 18 isFive (pedir valoracion), 19 isChangeCoin
+  // brokenMode (CSDownload.CheckSettingData): 0 = rotura de ropa con el modelo "爆衣ID" de equip_info (col 30), 1 = modelo+"_B"
+  // (esos prefabs no existen en el OBB tailandes), 2 = desactivada (m_BrokenMoldeHP = -1), 3 = "desnudo". brokenModel = modelo
+  // de reserva (CSDataCenter.m_BrokenMolde, por defecto CH00BC51: una cadena vacia lo anulaba). La rotura ademas exige que el
+  // cliente tenga PlayerPrefs "sexysystem" = 1, que llega por /reward/game-config/api_config.php (gameConfigJson).
   const header = row(["version", "bundleHost", "isExchange", "newsURL", "iapSandbox", "useCommunity", "brokenMode", "brokenModel", "lotteryEventImage", "showTutorial", "lockSystem", "useIAP", "f12", "f13", "f14", "isNPC", "isStory", "isPVP", "isFive", "isChangeCoin"]);
+  const brokenMode = cfg.flags.sexySystem ? 0 : 2;
   const lines = cfg.clientVersions.map((v) =>
-    row([v, `${cfg.baseUrl}/boxingangel/bundles/Google`, 0, `${cfg.baseUrl}/news/index.html`, 0, 0, 0, "", `${cfg.baseUrl}/boxingangel/image/`, cfg.flags.showTutorial, 0, 0, 0, 0, 0, cfg.flags.isNPC, cfg.flags.isStory, cfg.flags.isPVP, 0, 0]),
+    row([v, `${cfg.baseUrl}/boxingangel/bundles/Google`, 0, `${cfg.baseUrl}/news/index.html`, 0, 0, brokenMode, "CH00BC51", `${cfg.baseUrl}/boxingangel/image/`, cfg.flags.showTutorial, 0, 0, 0, 0, 0, cfg.flags.isNPC, cfg.flags.isStory, cfg.flags.isPVP, 0, 0]),
   );
   return [header, ...lines].join(CRLF) + CRLF;
+}
+
+/**
+ * Config remota del cliente (LoadConfigDB.test: POST https://boxingangel-apipay.monogame.in.th/reward/game-config/api_config.php,
+ * el cliente parcheado la pide a nuestro host). Indices fijos del cliente: data[0] sexysystem ("open"/"close"), [2] version que
+ * fuerza actualizacion en Android ("" = nunca), [3] idem iOS, [4] bossdifficult, [5] storydifficult, [6] pvpdifficult,
+ * [7] assassindifficult, [8] dualdifficult (se suman a la IA del rival; 0 = como hasta ahora), [9] gamesms (promocion por SMS
+ * tailandesa: "version-d/m/a/hora-d/m/a/hora", fechas del 2000 para que nunca salte), [10] sandboxversion.
+ */
+export function gameConfigJson(cfg: SettingsConfig): { status: string; data: { name: string; value: string }[] } {
+  const sexy = cfg.flags.sexySystem ? "open" : "close";
+  const data = [
+    ["sexysystemandroid", sexy], ["sexysystemios", sexy], ["forceupdateandroid", ""], ["forceupdateios", ""],
+    ["bossdifficult", "0"], ["storydifficult", "0"], ["pvpdifficult", "0"], ["assassindifficult", "0"], ["dualdifficult", "0"],
+    ["gamesms", "0-1/1/2000/00:00-1/1/2000/00:00"], ["sandboxversion", ""],
+  ].map(([name, value]) => ({ name, value }));
+  return { status: "OK", data };
 }
 
 export function coverLocalization(): string {

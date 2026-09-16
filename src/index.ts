@@ -4,7 +4,7 @@
 //
 // Convencion LenaCloud: escucha en process.env.PORT. Estado persistente en LENA_APPDATA.
 
-import { settingsZip, bundleDatabaseList, type SettingsConfig } from "./settings.ts";
+import { settingsZip, bundleDatabaseList, type SettingsConfig, gameConfigJson } from "./settings.ts";
 import { loadHandlerModules } from "./game.ts";
 import { config, onConfigChange, newsHtml } from "./config.ts";
 import { handleAdmin } from "./admin.ts";
@@ -122,6 +122,9 @@ const server = Bun.serve({
 
     // "Socket" del juego sobre HTTP (cliente parcheado con BAHttpSocket)
     if (p.startsWith("/socket/")) return handleSocket(p, req, log);
+
+    // Config remota del cliente (sexy system, dificultad, SMS): el original vivia en boxingangel-apipay.monogame.in.th
+    if (p === "/reward/game-config/api_config.php") return json(gameConfigJson(settingsCfg()));
 
     // Imagenes de evento (banners del gacha): Android_connect_info.lotteryEventImage + "<id>.png?abc=..."
     const img = /^\/boxingangel\/image\/([A-Za-z0-9_-]+\.png)$/.exec(p);
