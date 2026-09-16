@@ -146,8 +146,10 @@ const handlers: Record<string, Handler> = {
       log("LoginC2S: token invalido para", acc);
       return [s2c("LoginS2C", { res: RES.CERT_FAILED, step: 0, size: 0 })];
     }
-    s.acc = acc;
-    const player = loadPlayer(acc);
+    // Identidad del jugador = la clave de datos de la cuenta, no el nombre de acceso: al vincular
+    // una cuenta rapida el nombre cambia pero el personaje (y lo que de el guardan amigos/PvP) no.
+    s.acc = sess.key;
+    const player = loadPlayer(s.acc);
     if (!player) {
       log("LoginC2S: cuenta sin personaje ->", acc);
       return [s2c("LoginS2C", { res: RES.NO_RECORDS, step: 0, size: 0 })];
